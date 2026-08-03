@@ -1,0 +1,26 @@
+{
+  "files": [
+    "README.md",
+    "LEGAL.md",
+    "ds_config_zero2.json",
+    "requirements.txt",
+    "LICENSE",
+    "scripts/TimeLLM_ECL.sh",
+    "scripts/TimeLLM_ETTm2.sh",
+    "scripts/TimeLLM_ETTh1_ETTh2.sh",
+    "scripts/TimeLLM_Weather.sh",
+    "scripts/TimeLLM_ETTh1.sh",
+    "scripts/TimeLLM_M4.sh",
+    "scripts/TimeLLM_Traffic.sh",
+    "scripts/TimeLLM_ETTh2.sh",
+    "scripts/TimeLLM_ETTm1.sh",
+    "dataset/prompt_bank/Traffic.txt",
+    "dataset/prompt_bank/Weather.txt",
+    "dataset/prompt_bank/ECL.txt",
+    "dataset/prompt_bank/ETT.txt",
+    "dataset/prompt_bank/m4.txt",
+    "figures/framework.png",
+    "figures/method-detailed-illustration.png",
+    "figures/logo.png"
+  ]
+}
