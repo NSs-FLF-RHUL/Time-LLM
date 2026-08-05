@@ -198,10 +198,7 @@ def vali_pulsar(args, accelerator, model, discr, vali_data, vali_loader, criteri
     discr.eval()
     with torch.no_grad():
         for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(vali_loader)):
-            print(batch_x)
-            print(type(batch_x))
             batch_x = batch_x.float().to(accelerator.device)
-            quit()
             batch_y = batch_y.float()
 
             batch_x_mark = batch_x_mark.float().to(accelerator.device)
