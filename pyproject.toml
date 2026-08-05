@@ -1,0 +1,35 @@
+[project]
+authors = [{email = '', name = 'Jin, Ming and Wang, Shiyu and Ma, Lintao and Chu, Zhixuan and Zhang, James Y and Shi, Xiaoming and Chen, Pin-Yu and Liang, Yuxuan and Li, Yuan-Fang and Pan, Shirui and Wen, Qingsong'}]
+maintainers = [{ email = "joanna.berteaud@rhul.ac.uk", name = "Joanna Berteaud" }] # full name and email address
+classifiers = [
+  "Operating System :: POSIX",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = ["torch", "numpy", "matplotlib", "accelerate", "scipy", "einops", "pandas", "scikit_learn", "tqdm", "peft", "transformers", "deepspeed", "sentencepiece"]
+description = "Reprogramming framework to repurpose LLMs for general time series forecasting." # description of what the package provides / does
+dynamic = ["version"]
+keywords = []
+license = "GPL-3.0"
+license-files = ["LICENSE.md"]
+name = "timellm" # name of the package. Should match the name of the folder inside src/
+readme = "README.md"
+requires-python = ">=3.11"
+urls.homepage = "https://github.com/NSs-FLF-RHUL/Time-LLM"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools", "setuptools-scm"]
+
+[tool.setuptools_scm]
+local_scheme = "no-local-version"
+write_to = "src/tingan/_version.py"
+
+[tool.pytest.ini_options]
+addopts = ["--color=yes", "--import-mode=importlib", "--verbose"]
+testpaths = ["tests"]
