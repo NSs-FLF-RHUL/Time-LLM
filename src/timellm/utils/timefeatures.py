@@ -113,8 +113,6 @@ def time_features_from_frequency_str(freq_str: str) -> List[TimeFeature]:
             SecondOfMinute,
             MinuteOfHour,
             HourOfDay,
-            DayOfWeek,
-            DayOfMonth,
             DayOfYear,
         ],
     }
