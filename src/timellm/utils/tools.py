@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import shutil
 
 from tqdm import tqdm
+from importlib.resources import files
 
 plt.switch_backend('agg')
 
@@ -228,6 +229,7 @@ def load_content(args):
         file = 'ETT'
     else:
         file = args.data
-    with open('./dataset/prompt_bank/{0}.txt'.format(file), 'r') as f:
+    text_path = files("timellm").joinpath("../../dataset/prompt_bank/"+file+".txt")
+    with open(text_path, 'r') as f:
         content = f.read()
     return content
