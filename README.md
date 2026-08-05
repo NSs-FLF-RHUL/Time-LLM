@@ -1,3 +1,11 @@
+This is a fork of the original [Time-LLM repository](https://github.com/KimMeen/Time-LLM). 
+Please credit their work using the citation information below.
+This fork turns the original work into an installable package, to install: 
+
+- Clone this repository
+- Activate the Python environment you want to install into
+- In the directory which you cloned this project into, run `pip install .` 
+
 <div align="center">
   <!-- <h1><b> Time-LLM </b></h1> -->
   <!-- <h2><b> Time-LLM </b></h2> -->
