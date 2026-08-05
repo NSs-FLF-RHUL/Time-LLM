@@ -6,9 +6,9 @@ from torch import nn, optim
 from torch.optim import lr_scheduler
 from tqdm import tqdm
 
-from models import Autoformer, DLinear, TimeLLM
+from timellm.models import Autoformer, DLinear, TimeLLM
 
-from data_provider.data_factory import data_provider
+from timellm.data_provider.data_factory import data_provider
 import time
 import random
 import numpy as np
@@ -17,7 +17,7 @@ import os
 os.environ['CURL_CA_BUNDLE'] = ''
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:64"
 
-from utils.tools import del_files, EarlyStopping, adjust_learning_rate, vali, load_content
+from timellm.utils.tools import del_files, EarlyStopping, adjust_learning_rate, vali, load_content
 
 parser = argparse.ArgumentParser(description='Time-LLM')
 

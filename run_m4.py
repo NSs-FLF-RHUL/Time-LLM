@@ -5,23 +5,23 @@ from accelerate import DistributedDataParallelKwargs
 from torch import optim
 from torch.optim import lr_scheduler
 
-from data_provider.m4 import M4Meta
-from models import Autoformer, DLinear, TimeLLM
+from timellm.data_provider.m4 import M4Meta
+from timellm.models import Autoformer, DLinear, TimeLLM
 
-from data_provider.data_factory import data_provider
+from timellm.data_provider.data_factory import data_provider
 import time
 import random
 import numpy as np
 import pandas
 
-from utils.losses import smape_loss
-from utils.m4_summary import M4Summary
+from timellm.utils.losses import smape_loss
+from timellm.utils.m4_summary import M4Summary
 import os
 
 os.environ['CURL_CA_BUNDLE'] = ''
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:64"
 
-from utils.tools import del_files, EarlyStopping, adjust_learning_rate, load_content, test
+from timellm.utils.tools import del_files, EarlyStopping, adjust_learning_rate, load_content, test
 
 parser = argparse.ArgumentParser(description='Time-LLM')
 
