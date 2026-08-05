@@ -191,6 +191,67 @@ def vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric
     return total_loss, total_mae_loss
 
 
+def vali_pulsar(args, accelerator, model, discr, vali_data, vali_loader, criterion):
+    total_loss = []
+    total_loss_d = []
+    model.eval()
+    discr.eval()
+    with torch.no_grad():
+        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(vali_loader)):
+            print(batch_x)
+            print(type(batch_x))
+            batch_x = batch_x.float().to(accelerator.device)
+            quit()
+            batch_y = batch_y.float()
+
+            batch_x_mark = batch_x_mark.float().to(accelerator.device)
+            batch_y_mark = batch_y_mark.float().to(accelerator.device)
+
+            # decoder input
+            dec_inp = torch.zeros_like(batch_y[:, -args.pred_len:, :]).float()
+            dec_inp = torch.cat([batch_y[:, :args.label_len, :], dec_inp], dim=1).float().to(
+                accelerator.device)
+            # encoder - decoder
+            if args.use_amp:
+                with torch.cuda.amp.autocast():
+                    if args.output_attention:
+                        outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                    else:
+                        outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+            else:
+                if args.output_attention:
+                    outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                else:
+                    outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+
+            outputs, batch_y = accelerator.gather_for_metrics((outputs, batch_y))
+
+            f_dim = -1 if args.features == 'MS' else 0
+            outputs = outputs[:, -args.pred_len:, f_dim:]
+            batch_y = batch_y[:, -args.pred_len:, f_dim:].to(accelerator.device)
+
+            pred = outputs.detach()
+            true = batch_y.detach()
+
+            pred_dlabels = discr(outputs).detach()
+            true_dlabels = discr(batch_y).detach()
+
+            loss = criterion(pred_dlabels, torch.full(pred_dlabels.shape, 1.0, device=accelerator.device))
+            loss_d = criterion(pred_dlabels, torch.full(
+                pred_dlabels.shape, 0.0, device=accelerator.device)) + criterion(
+                true_dlabels, torch.full(pred_dlabels.shape, 1.0, device=accelerator.device))
+
+            total_loss.append(loss.item())
+            total_loss_d.append(loss_d.item())
+
+    total_loss = np.average(total_loss)
+    total_loss_d = np.average(total_loss_d)
+
+    model.train()
+    discr.eval()
+    return total_loss, total_loss_d, pred_dlabels.mean().cpu(), true_dlabels.mean().cpu()
+
+
 def test(args, accelerator, model, train_loader, vali_loader, criterion):
     x, _ = train_loader.dataset.last_insample_window()
     y = vali_loader.dataset.timeseries
