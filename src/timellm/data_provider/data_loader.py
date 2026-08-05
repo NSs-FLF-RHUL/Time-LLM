@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset
 from sklearn.preprocessing import StandardScaler
-from utils.timefeatures import time_features
-from data_provider.m4 import M4Dataset, M4Meta
+from timellm.utils.timefeatures import time_features
+from timellm.data_provider.m4 import M4Dataset, M4Meta
 import warnings
 
 warnings.filterwarnings('ignore')

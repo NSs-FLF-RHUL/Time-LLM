@@ -5,9 +5,9 @@ import torch.nn as nn
 
 from transformers import LlamaConfig, LlamaModel, LlamaTokenizer, GPT2Config, GPT2Model, GPT2Tokenizer, BertConfig, \
     BertModel, BertTokenizer
-from layers.Embed import PatchEmbedding
+from timellm.layers.Embed import PatchEmbedding
 import transformers
-from layers.StandardNorm import Normalize
+from timellm.layers.StandardNorm import Normalize
 
 transformers.logging.set_verbosity_error()
 

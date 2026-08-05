@@ -176,5 +176,5 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/python
 
 # Local IDE settings
-.ideas
+.idea
 .vscode
