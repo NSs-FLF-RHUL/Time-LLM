@@ -1,6 +1,5 @@
 [project]
-authors = [{email = '', name = 'Jin, Ming and Wang, Shiyu and Ma, Lintao and Chu, Zhixuan and Zhang, James Y and Shi, Xiaoming and Chen, Pin-Yu and Liang, Yuxuan and Li, Yuan-Fang and Pan, Shirui and Wen, Qingsong'}]
-maintainers = [{ email = "joanna.berteaud@rhul.ac.uk", name = "Joanna Berteaud" }] # full name and email address
+authors = [{ email = "joanna.berteaud@rhul.ac.uk", name = "Joanna Berteaud" }] # full name and email address
 classifiers = [
   "Operating System :: POSIX",
   "Programming Language :: Python :: 3",
