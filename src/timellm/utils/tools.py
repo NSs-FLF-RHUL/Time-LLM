@@ -48,7 +48,7 @@ class EarlyStopping:
         self.delta = delta
         self.save_mode = save_mode
 
-    def __call__(self, val_loss, model, path):
+    def __call__(self, val_loss, model, path, discr = None):
         score = -val_loss
         if self.best_score is None:
             self.best_score = score
@@ -65,10 +65,10 @@ class EarlyStopping:
         else:
             self.best_score = score
             if self.save_mode:
-                self.save_checkpoint(val_loss, model, path)
+                self.save_checkpoint(val_loss, model, path, discr)
             self.counter = 0
 
-    def save_checkpoint(self, val_loss, model, path):
+    def save_checkpoint(self, val_loss, model, path, discr = None):
         if self.verbose:
             if self.accelerator is not None:
                 self.accelerator.print(
@@ -80,8 +80,12 @@ class EarlyStopping:
         if self.accelerator is not None:
             model = self.accelerator.unwrap_model(model)
             torch.save(model.state_dict(), path + '/' + 'checkpoint')
+            if discr is not None:
+                discr = self.accelerator.unwrap_model(discr)
+                torch.save(discr.state_dict(), path + '/' + 'discr_checkpoint')
         else:
             torch.save(model.state_dict(), path + '/' + 'checkpoint')
+            torch.save(discr.state_dict(), path + '/' + 'discr_checkpoint')
         self.val_loss_min = val_loss
 
 
