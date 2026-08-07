@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import shutil
 
 from tqdm import tqdm
+from pathlib import Path
+from argparse import Namespace
 
 plt.switch_backend('agg')
 
@@ -43,11 +45,11 @@ class EarlyStopping:
         self.counter = 0
         self.best_score = None
         self.early_stop = False
-        self.val_loss_min = np.Inf
+        self.val_loss_min = np.inf
         self.delta = delta
         self.save_mode = save_mode
 
-    def __call__(self, val_loss, model, path):
+    def __call__(self, val_loss, model, path, discr = None):
         score = -val_loss
         if self.best_score is None:
             self.best_score = score
@@ -64,10 +66,10 @@ class EarlyStopping:
         else:
             self.best_score = score
             if self.save_mode:
-                self.save_checkpoint(val_loss, model, path)
+                self.save_checkpoint(val_loss, model, path, discr)
             self.counter = 0
 
-    def save_checkpoint(self, val_loss, model, path):
+    def save_checkpoint(self, val_loss, model, path, discr = None):
         if self.verbose:
             if self.accelerator is not None:
                 self.accelerator.print(
@@ -79,8 +81,12 @@ class EarlyStopping:
         if self.accelerator is not None:
             model = self.accelerator.unwrap_model(model)
             torch.save(model.state_dict(), path + '/' + 'checkpoint')
+            if discr is not None:
+                discr = self.accelerator.unwrap_model(discr)
+                torch.save(discr.state_dict(), path + '/' + 'discr_checkpoint')
         else:
             torch.save(model.state_dict(), path + '/' + 'checkpoint')
+            torch.save(discr.state_dict(), path + '/' + 'discr_checkpoint')
         self.val_loss_min = val_loss
 
 
@@ -186,6 +192,64 @@ def vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric
     return total_loss, total_mae_loss
 
 
+def vali_pulsar(args, accelerator, model, discr, vali_data, vali_loader, criterion):
+    total_loss = []
+    total_loss_d = []
+    model.eval()
+    discr.eval()
+    with torch.no_grad():
+        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(vali_loader)):
+            batch_x = batch_x.float().to(accelerator.device)
+            batch_y = batch_y.float()
+
+            batch_x_mark = batch_x_mark.float().to(accelerator.device)
+            batch_y_mark = batch_y_mark.float().to(accelerator.device)
+
+            # decoder input
+            dec_inp = torch.zeros_like(batch_y[:, -args.pred_len:, :]).float()
+            dec_inp = torch.cat([batch_y[:, :args.label_len, :], dec_inp], dim=1).float().to(
+                accelerator.device)
+            # encoder - decoder
+            if args.use_amp:
+                with torch.cuda.amp.autocast():
+                    if args.output_attention:
+                        outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                    else:
+                        outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+            else:
+                if args.output_attention:
+                    outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                else:
+                    outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+
+            outputs, batch_y = accelerator.gather_for_metrics((outputs, batch_y))
+
+            f_dim = -1 if args.features == 'MS' else 0
+            outputs = outputs[:, -args.pred_len:, f_dim:]
+            batch_y = batch_y[:, -args.pred_len:, f_dim:].to(accelerator.device)
+
+            pred = outputs.detach()
+            true = batch_y.detach()
+
+            pred_dlabels = discr(outputs).detach()
+            true_dlabels = discr(batch_y).detach()
+
+            loss = criterion(pred_dlabels, torch.full(pred_dlabels.shape, 1.0, device=accelerator.device))
+            loss_d = criterion(pred_dlabels, torch.full(
+                pred_dlabels.shape, 0.0, device=accelerator.device)) + criterion(
+                true_dlabels, torch.full(pred_dlabels.shape, 1.0, device=accelerator.device))
+
+            total_loss.append(loss.item())
+            total_loss_d.append(loss_d.item())
+
+    total_loss = np.average(total_loss)
+    total_loss_d = np.average(total_loss_d)
+
+    model.train()
+    discr.eval()
+    return total_loss, total_loss_d, pred_dlabels.mean().cpu(), true_dlabels.mean().cpu()
+
+
 def test(args, accelerator, model, train_loader, vali_loader, criterion):
     x, _ = train_loader.dataset.last_insample_window()
     y = vali_loader.dataset.timeseries
@@ -223,11 +287,45 @@ def test(args, accelerator, model, train_loader, vali_loader, criterion):
     return loss
 
 
-def load_content(args):
+def load_content(args: Namespace, *, prompt_bank: Path | None = None):
+    """
+    Load the content of a prompt file.
+
+    `file` may be either the absolute path to a prompt file on disk, or it
+    may be a data type specifier like 'ETT'. In the latter case, the
+    prompt file will attempt to be loaded from the `prompt_bank` directory,
+    which defaults to `datasets/prompt_bank` under `timellm`'s install
+    directory if not set.
+
+    Args:
+        args: Namespace containing, under .dat, prompt file or data specifier
+            for prompt file, to load.
+        prompt_bank: The location on disk of the directory in which prompt
+            files are stored. Defaults to the `timellm` install directory.
+
+    Returns:
+        Content of the prompt file.
+    """
+
+    # Ensures compatibilty with orginal Time-LLM
     if 'ETT' in args.data:
         file = 'ETT'
     else:
         file = args.data
-    with open('./dataset/prompt_bank/{0}.txt'.format(file), 'r') as f:
-        content = f.read()
-    return content
+    file = Path(file)
+    if not file.suffix:
+        file = file.with_suffix('.txt')
+
+    if prompt_bank is None:
+        # Safer than importlib.resources.files
+        prompt_bank = Path(__file__).parent.parent.parent.parent / "dataset/prompt_bank"
+
+    if file.exists():
+        file_location = file
+    elif (prompt_bank / file).exists():
+        file_location = prompt_bank / file
+    else:
+        raise OSError(f"{file} not found")
+
+    with file_location.open("r") as f:
+        return f.read()

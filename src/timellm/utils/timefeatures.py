@@ -18,10 +18,13 @@ class TimeFeature:
 
 
 class SecondOfMinute(TimeFeature):
-    """Minute of hour encoded as value between [-0.5, 0.5]"""
+    """Second of minute encoded as value between [-0.5, 0.5]"""
 
     def __call__(self, index: pd.DatetimeIndex) -> np.ndarray:
         return index.second / 59.0 - 0.5
+        
+    def reverse(self, t: np.ndarray) -> np.ndarray:
+        return (t + 0.5) * 59.0
 
 
 class MinuteOfHour(TimeFeature):
@@ -29,6 +32,9 @@ class MinuteOfHour(TimeFeature):
 
     def __call__(self, index: pd.DatetimeIndex) -> np.ndarray:
         return index.minute / 59.0 - 0.5
+        
+    def reverse(self, t: np.ndarray) -> np.ndarray:
+        return (t + 0.5) * 59.0
 
 
 class HourOfDay(TimeFeature):
@@ -36,10 +42,13 @@ class HourOfDay(TimeFeature):
 
     def __call__(self, index: pd.DatetimeIndex) -> np.ndarray:
         return index.hour / 23.0 - 0.5
+        
+    def reverse(self, t: np.ndarray) -> np.ndarray:
+        return (t + 0.5) * 23.0
 
 
 class DayOfWeek(TimeFeature):
-    """Hour of day encoded as value between [-0.5, 0.5]"""
+    """Day of week encoded as value between [-0.5, 0.5]"""
 
     def __call__(self, index: pd.DatetimeIndex) -> np.ndarray:
         return index.dayofweek / 6.0 - 0.5
@@ -57,6 +66,9 @@ class DayOfYear(TimeFeature):
 
     def __call__(self, index: pd.DatetimeIndex) -> np.ndarray:
         return (index.dayofyear - 1) / 365.0 - 0.5
+        
+    def reverse(self, t: np.ndarray) -> np.ndarray:
+        return (t + 0.5) * 365.0 + 1
 
 
 class MonthOfYear(TimeFeature):
@@ -101,8 +113,6 @@ def time_features_from_frequency_str(freq_str: str) -> List[TimeFeature]:
             SecondOfMinute,
             MinuteOfHour,
             HourOfDay,
-            DayOfWeek,
-            DayOfMonth,
             DayOfYear,
         ],
     }
