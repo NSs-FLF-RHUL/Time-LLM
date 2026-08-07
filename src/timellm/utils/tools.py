@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import shutil
 
 from tqdm import tqdm
-from importlib.resources import files
+from pathlib import Path
+from argparse import Namespace
 
 plt.switch_backend('agg')
 
@@ -286,12 +287,45 @@ def test(args, accelerator, model, train_loader, vali_loader, criterion):
     return loss
 
 
-def load_content(args):
+def load_content(args: Namespace, *, prompt_bank: Path | None = None):
+    """
+    Load the content of a prompt file.
+
+    `file` may be either the absolute path to a prompt file on disk, or it
+    may be a data type specifier like 'ETT'. In the latter case, the
+    prompt file will attempt to be loaded from the `prompt_bank` directory,
+    which defaults to `datasets/prompt_bank` under `timellm`'s install
+    directory if not set.
+
+    Args:
+        args: Namespace containing, under .dat, prompt file or data specifier
+            for prompt file, to load.
+        prompt_bank: The location on disk of the directory in which prompt
+            files are stored. Defaults to the `timellm` install directory.
+
+    Returns:
+        Content of the prompt file.
+    """
+
+    # Ensures compatibilty with orginal Time-LLM
     if 'ETT' in args.data:
         file = 'ETT'
     else:
         file = args.data
-    text_path = files("timellm").joinpath("../../dataset/prompt_bank/"+file+".txt")
-    with open(text_path, 'r') as f:
-        content = f.read()
-    return content
+    file = Path(file)
+    if not file.suffix:
+        file = file.with_suffix('.txt')
+
+    if prompt_bank is None:
+        # Safer than importlib.resources.files
+        prompt_bank = Path(__file__).parent.parent.parent.parent / "dataset/prompt_bank"
+
+    if file.exists():
+        file_location = file
+    elif (prompt_bank / file).exists():
+        file_location = prompt_bank / file
+    else:
+        raise OSError(f"{file} not found")
+
+    with file_location.open("r") as f:
+        return f.read()
