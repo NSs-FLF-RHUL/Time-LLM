@@ -210,7 +210,7 @@ class Dataset_Custom(Dataset):
     def __init__(self, root_path, flag='train', size=None,
                  features='S', data_path='ETTh1.csv',
                  target='OT', scale=True, timeenc=0, freq='h', percent=100,
-                 seasonal_patterns=None):
+                 seasonal_patterns=None, nrows = None):
         if size == None:
             self.seq_len = 24 * 4 * 4
             self.label_len = 24 * 4
@@ -233,6 +233,7 @@ class Dataset_Custom(Dataset):
 
         self.root_path = root_path
         self.data_path = data_path
+        self.nrows = nrows
         self.__read_data__()
 
         self.enc_in = self.data_x.shape[-1]
@@ -241,7 +242,8 @@ class Dataset_Custom(Dataset):
     def __read_data__(self):
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
+                                          self.data_path),
+                             nrows=self.nrows)
 
         '''
         df_raw.columns: ['date', ...(other features), target feature]
