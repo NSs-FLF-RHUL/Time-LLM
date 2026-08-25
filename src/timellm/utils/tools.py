@@ -90,6 +90,24 @@ class EarlyStopping:
         self.val_loss_min = val_loss
 
 
+def create_checkpoint_dict(model: torch.nn.Module,
+                           optimizer: torch.optim.Optimizer | None,
+                           scheduler: torch.optim.lr_scheduler.LRScheduler | None
+                           ) -> dict[str, Any]:
+    """
+    Create a general checkpoint for inference and/or resuming training.
+
+    The checkpoint is a disctionnary that contains the trained weights of the model,
+    and, optionally, the state of the optimizer and of the learning rate scheduler.
+    To be used with save_checkpoint of class EarlyStopping.
+    """
+    checkpoint = {
+        'model': model.state_dict(),
+        'optimizer': optimizer.state_dict() if optimizer else None,
+        'scheduler': scheduler if scheduler else None}
+    return checkpoint
+
+
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
     __getattr__ = dict.get
