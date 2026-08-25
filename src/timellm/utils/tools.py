@@ -147,6 +147,7 @@ class EarlyStopping:
 
 def create_checkpoint_dict(model: torch.nn.Module,
                            loss: float,
+                           epoch: int | None = None,
                            optimizer: torch.optim.Optimizer | None = None,
                            scheduler: torch.optim.lr_scheduler.LRScheduler | None = None
                            ) -> dict[str, Any]:
@@ -160,6 +161,7 @@ def create_checkpoint_dict(model: torch.nn.Module,
     checkpoint = {
         'model': model.state_dict(),
         'loss': loss,
+        'epoch': epoch,
         'optimizer': optimizer.state_dict() if optimizer is not None else None,
         'scheduler': scheduler.state_dict() if scheduler is not None else None,
     }
