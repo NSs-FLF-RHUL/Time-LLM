@@ -6,6 +6,7 @@ import shutil
 from tqdm import tqdm
 from pathlib import Path
 from argparse import Namespace
+from typing import Any
 
 plt.switch_backend('agg')
 
@@ -114,6 +115,7 @@ class EarlyStopping:
 
 
 def create_checkpoint_dict(model: torch.nn.Module,
+                           loss: float,
                            optimizer: torch.optim.Optimizer | None = None,
                            scheduler: torch.optim.lr_scheduler.LRScheduler | None = None
                            ) -> dict[str, Any]:
@@ -126,8 +128,10 @@ def create_checkpoint_dict(model: torch.nn.Module,
     """
     checkpoint = {
         'model': model.state_dict(),
-        'optimizer': optimizer.state_dict() if optimizer else None,
-        'scheduler': scheduler if scheduler else None}
+        'loss': loss,
+        'optimizer': optimizer.state_dict() if optimizer is not None else None,
+        'scheduler': scheduler.state_dict() if scheduler is not None else None,
+    }
     return checkpoint
 
 
