@@ -40,6 +40,19 @@ def adjust_learning_rate(accelerator, optimizer, scheduler, epoch, args, printou
 
 class EarlyStopping:
     def __init__(self, accelerator=None, patience=7, verbose=False, delta=0, save_mode=True):
+        """
+        Identify when to save training progress, and save it when conditions are met.
+
+        Stop training if the loss has not been improving for a number of epochs defined by patience, and
+        save progress when there is improvement if requested. An improvement means the loss has improved,
+        i.e, decreased by at least delta.
+
+        :param accelerator: accelerator
+        :param patience: number of epochs to wait for improvement before stopping training
+        :param verbose: whether to print number of epochs without improvement and saving notice.
+        :param delta: minimal acceptable improvement of the loss function.
+        :param save_mode: whether to save checkpoints or not.
+        """
         self.accelerator = accelerator
         self.patience = patience
         self.verbose = verbose
@@ -50,9 +63,27 @@ class EarlyStopping:
         self.delta = delta
         self.save_mode = save_mode
 
-    def __call__(self, val_loss, model, path,
-                        optimizer: torch.optim.Optimizer | None = None,
-                        scheduler: torch.optim.lr_scheduler.LRScheduler | None = None):
+    def __call__(self,
+                 val_loss: float,
+                 model: torch.Module.nn,
+                 path: Path | str,
+                 optimizer: torch.optim.Optimizer | None = None,
+                 scheduler: torch.optim.lr_scheduler.LRScheduler | None = None):
+        """
+        Compare current score with best score and update early stopping counter.
+
+        The score is defined as the opposite of the loss. We want to minimize the losse function, hence,
+        we want to maximize the loss. If the best score is not defined yet, we are likely just done with
+        the first epoch; this will be our first checkpoint. If the score has not significantly improved,
+        we increase the early stopping counter. Otherwise, we update the best loss to the current loss
+        and save another checkpoint.
+
+        :param val_loss: current validation loss
+        :param model: trained neural network
+        :param path: path to save the checkpoint
+        :param optimizer: optimizer, optional
+        :param scheduler: learning rate scheduler, optional
+        """
         score = -val_loss
         if self.best_score is None:
             self.best_score = score
