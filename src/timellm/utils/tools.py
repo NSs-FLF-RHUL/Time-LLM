@@ -49,7 +49,9 @@ class EarlyStopping:
         self.delta = delta
         self.save_mode = save_mode
 
-    def __call__(self, val_loss, model, path, discr = None):
+    def __call__(self, val_loss, model, path,
+                        optimizer: torch.optim.Optimizer | None = None,
+                        scheduler: torch.optim.lr_scheduler.LRScheduler | None = None):
         score = -val_loss
         if self.best_score is None:
             self.best_score = score
@@ -66,33 +68,54 @@ class EarlyStopping:
         else:
             self.best_score = score
             if self.save_mode:
-                self.save_checkpoint(val_loss, model, path, discr)
+                self.save_checkpoint(val_loss, model, path, optimizer, scheduler)
             self.counter = 0
 
-    def save_checkpoint(self, val_loss, model, path, discr = None):
+    def save_checkpoint(self,
+                        val_loss: float,
+                        model: torch.nn.Module,
+                        path: str | Path,
+                        optimizer: torch.optim.Optimizer | None = None,
+                        scheduler: torch.optim.lr_scheduler.LRScheduler | None = None
+                        ) -> None:
+        """
+        Save a general checkpoint for inference and/or resuming training.
+
+        The checkpoint is a dictionnary that contains all information about the state
+        of the model, its optimizer and learning rate scheduler.
+
+        :param val_loss: current validation loss
+        :param model: trained neural network
+        :param path: path to save the checkpoint
+        :param optimizer: optimizer, optional
+        :param scheduler: learning rate scheduler, optional
+        """
         if self.verbose:
+            save_msg = (f'Validation loss decreased ({self.val_loss_min:.6f} --> '
+                        f'{val_loss:.6f}).  Saving model ...')
             if self.accelerator is not None:
-                self.accelerator.print(
-                    f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
+                self.accelerator.print(save_msg)
             else:
-                print(
-                    f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
+                print(save_msg)
 
         if self.accelerator is not None:
             model = self.accelerator.unwrap_model(model)
-            torch.save(model.state_dict(), path + '/' + 'checkpoint')
-            if discr is not None:
-                discr = self.accelerator.unwrap_model(discr)
-                torch.save(discr.state_dict(), path + '/' + 'discr_checkpoint')
-        else:
-            torch.save(model.state_dict(), path + '/' + 'checkpoint')
-            torch.save(discr.state_dict(), path + '/' + 'discr_checkpoint')
+
+        model_dict = create_checkpoint_dict(model, optimizer, scheduler)
+        path = Path(path)
+        if path.is_dir():
+            # For retro-compatibility with original Time-LLM
+            path = path / 'checkpoint.pth'
+        elif path.suffix == '':
+            path = path / '.pth'
+        torch.save(model_dict, path)
+
         self.val_loss_min = val_loss
 
 
 def create_checkpoint_dict(model: torch.nn.Module,
-                           optimizer: torch.optim.Optimizer | None,
-                           scheduler: torch.optim.lr_scheduler.LRScheduler | None
+                           optimizer: torch.optim.Optimizer | None = None,
+                           scheduler: torch.optim.lr_scheduler.LRScheduler | None = None
                            ) -> dict[str, Any]:
     """
     Create a general checkpoint for inference and/or resuming training.
