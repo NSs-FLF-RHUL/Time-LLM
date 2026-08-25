@@ -57,7 +57,7 @@ class EarlyStopping:
         if self.best_score is None:
             self.best_score = score
             if self.save_mode:
-                self.save_checkpoint(val_loss, model, path)
+                self.save_checkpoint(val_loss, model, path, optimizer, scheduler)
         elif score < self.best_score + self.delta:
             self.counter += 1
             if self.accelerator is None:
@@ -102,7 +102,7 @@ class EarlyStopping:
         if self.accelerator is not None:
             model = self.accelerator.unwrap_model(model)
 
-        model_dict = create_checkpoint_dict(model, optimizer, scheduler)
+        model_dict = create_checkpoint_dict(model, val_loss, optimizer, scheduler)
         path = Path(path)
         if path.is_dir():
             # For retro-compatibility with original Time-LLM
