@@ -65,7 +65,7 @@ class EarlyStopping:
 
     def __call__(self,
                  val_loss: float,
-                 model: torch.Module.nn,
+                 model: torch.nn.Module,
                  path: Path | str,
                  optimizer: torch.optim.Optimizer | None = None,
                  scheduler: torch.optim.lr_scheduler.LRScheduler | None = None):
