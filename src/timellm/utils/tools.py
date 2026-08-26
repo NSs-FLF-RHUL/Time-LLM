@@ -6,6 +6,7 @@ import shutil
 from tqdm import tqdm
 from pathlib import Path
 from argparse import Namespace
+from typing import Any
 
 plt.switch_backend('agg')
 
@@ -39,6 +40,19 @@ def adjust_learning_rate(accelerator, optimizer, scheduler, epoch, args, printou
 
 class EarlyStopping:
     def __init__(self, accelerator=None, patience=7, verbose=False, delta=0, save_mode=True):
+        """
+        Identify when to save training progress, and save it when conditions are met.
+
+        Stop training if the loss has not been improving for a number of epochs defined by patience, and
+        save progress when there is improvement if requested. An improvement means the loss has improved,
+        i.e, decreased by at least delta.
+
+        :param accelerator: accelerator
+        :param patience: number of epochs to wait for improvement before stopping training
+        :param verbose: whether to print number of epochs without improvement and saving notice.
+        :param delta: minimal acceptable improvement of the loss function.
+        :param save_mode: whether to save checkpoints or not.
+        """
         self.accelerator = accelerator
         self.patience = patience
         self.verbose = verbose
@@ -49,12 +63,32 @@ class EarlyStopping:
         self.delta = delta
         self.save_mode = save_mode
 
-    def __call__(self, val_loss, model, path, discr = None):
+    def __call__(self,
+                 val_loss: float,
+                 model: torch.nn.Module,
+                 path: Path | str,
+                 optimizer: torch.optim.Optimizer | None = None,
+                 scheduler: torch.optim.lr_scheduler.LRScheduler | None = None):
+        """
+        Compare current score with best score and update early stopping counter.
+
+        The score is defined as the opposite of the loss. We want to minimize the losse function, hence,
+        we want to maximize the loss. If the best score is not defined yet, we are likely just done with
+        the first epoch; this will be our first checkpoint. If the score has not significantly improved,
+        we increase the early stopping counter. Otherwise, we update the best loss to the current loss
+        and save another checkpoint.
+
+        :param val_loss: current validation loss
+        :param model: trained neural network
+        :param path: path to save the checkpoint
+        :param optimizer: optimizer, optional
+        :param scheduler: learning rate scheduler, optional
+        """
         score = -val_loss
         if self.best_score is None:
             self.best_score = score
             if self.save_mode:
-                self.save_checkpoint(val_loss, model, path)
+                self.save_checkpoint(val_loss, model, path, optimizer, scheduler)
         elif score < self.best_score + self.delta:
             self.counter += 1
             if self.accelerator is None:
@@ -66,28 +100,72 @@ class EarlyStopping:
         else:
             self.best_score = score
             if self.save_mode:
-                self.save_checkpoint(val_loss, model, path, discr)
+                self.save_checkpoint(val_loss, model, path, optimizer, scheduler)
             self.counter = 0
 
-    def save_checkpoint(self, val_loss, model, path, discr = None):
+    def save_checkpoint(self,
+                        val_loss: float,
+                        model: torch.nn.Module,
+                        path: str | Path,
+                        optimizer: torch.optim.Optimizer | None = None,
+                        scheduler: torch.optim.lr_scheduler.LRScheduler | None = None
+                        ) -> None:
+        """
+        Save a general checkpoint for inference and/or resuming training.
+
+        The checkpoint is a dictionnary that contains all information about the state
+        of the model, its optimizer and learning rate scheduler.
+
+        :param val_loss: current validation loss
+        :param model: trained neural network
+        :param path: path to save the checkpoint
+        :param optimizer: optimizer, optional
+        :param scheduler: learning rate scheduler, optional
+        """
         if self.verbose:
+            save_msg = (f'Validation loss decreased ({self.val_loss_min:.6f} --> '
+                        f'{val_loss:.6f}).  Saving model ...')
             if self.accelerator is not None:
-                self.accelerator.print(
-                    f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
+                self.accelerator.print(save_msg)
             else:
-                print(
-                    f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
+                print(save_msg)
 
         if self.accelerator is not None:
             model = self.accelerator.unwrap_model(model)
-            torch.save(model.state_dict(), path + '/' + 'checkpoint')
-            if discr is not None:
-                discr = self.accelerator.unwrap_model(discr)
-                torch.save(discr.state_dict(), path + '/' + 'discr_checkpoint')
-        else:
-            torch.save(model.state_dict(), path + '/' + 'checkpoint')
-            torch.save(discr.state_dict(), path + '/' + 'discr_checkpoint')
+
+        model_dict = create_checkpoint_dict(model, val_loss, optimizer, scheduler)
+        path = Path(path)
+        if path.is_dir():
+            # For retro-compatibility with original Time-LLM
+            path = path / 'checkpoint.pth'
+        elif path.suffix == '':
+            path = path / '.pth'
+        torch.save(model_dict, path)
+
         self.val_loss_min = val_loss
+
+
+def create_checkpoint_dict(model: torch.nn.Module,
+                           loss: float,
+                           epoch: int | None = None,
+                           optimizer: torch.optim.Optimizer | None = None,
+                           scheduler: torch.optim.lr_scheduler.LRScheduler | None = None
+                           ) -> dict[str, Any]:
+    """
+    Create a general checkpoint for inference and/or resuming training.
+
+    The checkpoint is a disctionnary that contains the trained weights of the model,
+    and, optionally, the state of the optimizer and of the learning rate scheduler.
+    To be used with save_checkpoint of class EarlyStopping.
+    """
+    checkpoint = {
+        'model': model.state_dict(),
+        'loss': loss,
+        'epoch': epoch,
+        'optimizer': optimizer.state_dict() if optimizer is not None else None,
+        'scheduler': scheduler.state_dict() if scheduler is not None else None,
+    }
+    return checkpoint
 
 
 class dotdict(dict):
