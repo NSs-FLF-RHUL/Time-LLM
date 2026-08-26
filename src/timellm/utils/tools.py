@@ -288,26 +288,13 @@ def vali_pulsar(args, accelerator, model, discr, vali_data, vali_loader, criteri
             dec_inp = torch.cat([batch_y[:, :args.label_len, :], dec_inp], dim=1).float().to(
                 accelerator.device)
             # encoder - decoder
-            if args.use_amp:
-                with torch.cuda.amp.autocast():
-                    if args.output_attention:
-                        outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                    else:
-                        outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-            else:
-                if args.output_attention:
-                    outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                else:
-                    outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+            outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
             outputs, batch_y = accelerator.gather_for_metrics((outputs, batch_y))
 
             f_dim = -1 if args.features == 'MS' else 0
             outputs = outputs[:, -args.pred_len:, f_dim:]
             batch_y = batch_y[:, -args.pred_len:, f_dim:].to(accelerator.device)
-
-            pred = outputs.detach()
-            true = batch_y.detach()
 
             pred_dlabels = discr(outputs).detach()
             true_dlabels = discr(batch_y).detach()
