@@ -1,5 +1,6 @@
 from timellm.data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_M4
-from torch.utils.data import DataLoader
+from timellm.utils.tools import seed_worker
+import torch
 
 data_dict = {
     'ETTh1': Dataset_ETT_hour,
@@ -14,7 +15,7 @@ data_dict = {
 }
 
 
-def data_provider(args, flag):
+def data_provider(args, flag, seed = None):
     Data = data_dict[args.data]
     timeenc = 0 if args.embed != 'timeF' else 1
     percent = args.percent
@@ -57,10 +58,20 @@ def data_provider(args, flag):
             seasonal_patterns=args.seasonal_patterns,
             nrows=args.nrows,
         )
-    data_loader = DataLoader(
+    if seed is not None:
+        g = torch.Generator()
+        g.manual_seed(seed)
+        wif = seed_worker
+    else:
+        g = None
+        wif = None
+    data_loader = torch.utils.data.DataLoader(
         data_set,
         batch_size=batch_size,
         shuffle=shuffle_flag,
         num_workers=args.num_workers,
-        drop_last=drop_last)
+        drop_last=drop_last,
+        worker_init_fn=wif,
+        generator=g
+    )
     return data_set, data_loader
