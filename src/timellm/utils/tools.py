@@ -1,5 +1,5 @@
 import numpy as np
-import torch
+import torch, random
 import matplotlib.pyplot as plt
 import shutil
 
@@ -394,3 +394,8 @@ def load_content(args: Namespace, *, prompt_bank: Path | None = None):
 
     with file_location.open("r") as f:
         return f.read()
+
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
