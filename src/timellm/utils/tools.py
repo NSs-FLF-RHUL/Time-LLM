@@ -383,7 +383,7 @@ def load_content(args: Namespace, *, prompt_bank: Path | None = None):
 
     if prompt_bank is None:
         # Safer than importlib.resources.files
-        prompt_bank = Path(__file__).parent.parent.parent.parent / "dataset/prompt_bank"
+        prompt_bank = Path(__file__).parent.parent.parent.parent / "dataset" / "prompt_bank"
 
     if file.exists():
         file_location = file

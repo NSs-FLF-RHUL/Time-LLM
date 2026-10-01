@@ -7,7 +7,21 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
 ]
-dependencies = ["torch", "numpy", "matplotlib", "accelerate", "scipy", "einops", "pandas", "scikit_learn", "tqdm", "peft", "transformers", "deepspeed", "sentencepiece"]
+dependencies = [
+  "torch",
+  "numpy",
+  "matplotlib",
+  "accelerate",
+  "scipy",
+  "einops",
+  "pandas",
+  "scikit_learn",
+  "tqdm",
+  "peft",
+  "transformers[tiktoken,sentencepiece]",
+  "deepspeed",
+  "sentencepiece",
+]
 description = "Reprogramming framework to repurpose LLMs for general time series forecasting." # description of what the package provides / does
 dynamic = ["version"]
 keywords = []
@@ -15,7 +29,7 @@ license = "GPL-3.0"
 license-files = ["LICENSE.md"]
 name = "timellm" # name of the package. Should match the name of the folder inside src/
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 urls.homepage = "https://github.com/NSs-FLF-RHUL/Time-LLM"
 
 [project.optional-dependencies]
@@ -32,3 +46,6 @@ write_to = "src/tingan/_version.py"
 [tool.pytest.ini_options]
 addopts = ["--color=yes", "--import-mode=importlib", "--verbose"]
 testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+where = ["src", "dataset"]
