@@ -209,7 +209,7 @@ class Model(nn.Module):
 
         min_values = torch.min(x_enc, dim=1)[0]
         max_values = torch.max(x_enc, dim=1)[0]
-        #medians = torch.median(x_enc, dim=1).values
+        medians = torch.median(x_enc, dim=1).values
         lags = self.calcute_lags(x_enc)
         trends = x_enc.diff(dim=1).sum(dim=1)
 
@@ -217,7 +217,7 @@ class Model(nn.Module):
         for b in range(x_enc.shape[0]):
             min_values_str = str(min_values[b].tolist()[0])
             max_values_str = str(max_values[b].tolist()[0])
-            #median_values_str = str(medians[b].tolist()[0])
+            median_values_str = str(medians[b].tolist()[0])
             lags_values_str = str(lags[b].tolist())
             prompt_ = (
                 f"<|start_prompt|>Dataset description: {self.description}"
@@ -225,7 +225,7 @@ class Model(nn.Module):
                 "Input statistics: "
                 f"min value {min_values_str}, "
                 f"max value {max_values_str}, "
-                #f"median value {median_values_str}, "
+                f"median value {median_values_str}, "
                 f"the trend of input is {'upward' if trends[b] > 0 else 'downward'}, "
                 f"top 5 lags are : {lags_values_str}<|<end_prompt>|>"
             )
