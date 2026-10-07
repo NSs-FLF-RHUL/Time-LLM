@@ -279,6 +279,7 @@ class ReprogrammingLayer(nn.Module):
         self.out_projection = nn.Linear(d_keys * n_heads, d_llm)
         self.n_heads = n_heads
         self.dropout = nn.Dropout(attention_dropout)
+        self.attn_mean = None
 
     def forward(self, target_embedding, source_embedding, value_embedding):
         B, L, _ = target_embedding.shape
@@ -302,7 +303,10 @@ class ReprogrammingLayer(nn.Module):
 
         scores = torch.einsum("blhe,she->bhls", target_embedding, source_embedding)
 
-        A = self.dropout(torch.softmax(scale * scores, dim=-1))
+        attn = torch.softmax(scale * scores, dim=-1)
+        self.attn_mean = attn.mean(dim=0).mean(dim=0).detach().cpu().numpy()
+
+        A = self.dropout(attn)
         reprogramming_embedding = torch.einsum("bhls,she->blhe", A, value_embedding)
 
         return reprogramming_embedding
