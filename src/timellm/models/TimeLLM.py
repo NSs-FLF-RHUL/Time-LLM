@@ -175,7 +175,10 @@ class Model(nn.Module):
 
         self.word_embeddings = self.llm_model.get_input_embeddings().weight
         self.vocab_size = self.word_embeddings.shape[0]
-        self.num_tokens = 1000
+        if self.task_name == 'long_term_forecast':
+            self.num_tokens = 1000
+        elif self.task_name == 'short_term_forecast':
+            self.num_tokens = 100
         self.mapping_layer = nn.Linear(self.vocab_size, self.num_tokens)
 
         self.reprogramming_layer = ReprogrammingLayer(configs.d_model, configs.n_heads, self.d_ff, self.d_llm)
