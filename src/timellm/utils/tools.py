@@ -8,10 +8,21 @@ from pathlib import Path
 from argparse import Namespace
 from typing import Any
 
+from accelerate import Accelerator
+from argparse import Namespace
+
 plt.switch_backend('agg')
 
 
-def adjust_learning_rate(accelerator, optimizer, scheduler, epoch, args, printout=True):
+def adjust_learning_rate(
+        accelerator: Accelerator | None = None,
+        optimizer: torch.optim.Optimizer | None = None,
+        scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
+        epoch: int | None = None,
+        args: Namespace | None = None,
+        printout: bool = True
+) -> None:
+    lr_adjust = {}
     if args.lradj == 'type1':
         lr_adjust = {epoch: args.learning_rate * (0.5 ** ((epoch - 1) // 1))}
     elif args.lradj == 'type2':
@@ -27,6 +38,7 @@ def adjust_learning_rate(accelerator, optimizer, scheduler, epoch, args, printou
         lr_adjust = {epoch: scheduler.get_last_lr()[0]}
     elif args.lradj == 'constant':
         lr_adjust = {epoch: args.learning_rate}
+
     if epoch in lr_adjust.keys():
         lr = lr_adjust[epoch]
         for param_group in optimizer.param_groups:

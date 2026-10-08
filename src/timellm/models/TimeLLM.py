@@ -175,7 +175,10 @@ class Model(nn.Module):
 
         self.word_embeddings = self.llm_model.get_input_embeddings().weight
         self.vocab_size = self.word_embeddings.shape[0]
-        self.num_tokens = 1000
+        if self.task_name == 'long_term_forecast':
+            self.num_tokens = 1000
+        elif self.task_name == 'short_term_forecast':
+            self.num_tokens = 100
         self.mapping_layer = nn.Linear(self.vocab_size, self.num_tokens)
 
         self.reprogramming_layer = ReprogrammingLayer(configs.d_model, configs.n_heads, self.d_ff, self.d_llm)
@@ -206,7 +209,7 @@ class Model(nn.Module):
 
         min_values = torch.min(x_enc, dim=1)[0]
         max_values = torch.max(x_enc, dim=1)[0]
-        #medians = torch.median(x_enc, dim=1).values
+        medians = torch.median(x_enc, dim=1).values
         lags = self.calcute_lags(x_enc)
         trends = x_enc.diff(dim=1).sum(dim=1)
 
@@ -214,7 +217,7 @@ class Model(nn.Module):
         for b in range(x_enc.shape[0]):
             min_values_str = str(min_values[b].tolist()[0])
             max_values_str = str(max_values[b].tolist()[0])
-            #median_values_str = str(medians[b].tolist()[0])
+            median_values_str = str(medians[b].tolist()[0])
             lags_values_str = str(lags[b].tolist())
             prompt_ = (
                 f"<|start_prompt|>Dataset description: {self.description}"
@@ -222,7 +225,7 @@ class Model(nn.Module):
                 "Input statistics: "
                 f"min value {min_values_str}, "
                 f"max value {max_values_str}, "
-                #f"median value {median_values_str}, "
+                f"median value {median_values_str}, "
                 f"the trend of input is {'upward' if trends[b] > 0 else 'downward'}, "
                 f"top 5 lags are : {lags_values_str}<|<end_prompt>|>"
             )
@@ -276,6 +279,7 @@ class ReprogrammingLayer(nn.Module):
         self.out_projection = nn.Linear(d_keys * n_heads, d_llm)
         self.n_heads = n_heads
         self.dropout = nn.Dropout(attention_dropout)
+        self.attn_mean = None
 
     def forward(self, target_embedding, source_embedding, value_embedding):
         B, L, _ = target_embedding.shape
@@ -299,7 +303,10 @@ class ReprogrammingLayer(nn.Module):
 
         scores = torch.einsum("blhe,she->bhls", target_embedding, source_embedding)
 
-        A = self.dropout(torch.softmax(scale * scores, dim=-1))
+        attn = torch.softmax(scale * scores, dim=-1)
+        self.attn_mean = attn.mean(dim=0).mean(dim=0).detach().cpu().numpy()
+
+        A = self.dropout(attn)
         reprogramming_embedding = torch.einsum("bhls,she->blhe", A, value_embedding)
 
         return reprogramming_embedding
