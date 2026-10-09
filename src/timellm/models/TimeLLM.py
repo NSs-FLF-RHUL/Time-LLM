@@ -23,6 +23,7 @@ transformers.logging.set_verbosity_error()
 
 class FlattenHead(nn.Module):
     """Flatten head class."""
+
     def __init__(
         self, n_vars: int, nf: int, target_window: int, head_dropout: float = 0
     ) -> None:
