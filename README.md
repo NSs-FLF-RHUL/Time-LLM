@@ -1,10 +1,10 @@
-This is a fork of the original [Time-LLM repository](https://github.com/KimMeen/Time-LLM). 
+This is a fork of the original [Time-LLM repository](https://github.com/KimMeen/Time-LLM).
 Please credit their work using the citation information below.
-This fork turns the original work into an installable package, to install: 
+This fork turns the original work into an installable package, to install:
 
 - Clone this repository
 - Activate the Python environment you want to install into
-- In the directory which you cloned this project into, run `pip install .` 
+- In the directory which you cloned this project into, run `pip install .`
 
 <div align="center">
   <!-- <h1><b> Time-LLM </b></h1> -->
@@ -34,7 +34,6 @@ This fork turns the original work into an installable package, to install:
 **[<a href="https://mp.weixin.qq.com/s/nUiQGnHOkWznoBPqM0KHXg">AI算法厨房中文解读</a>]**
 **[<a href="https://zhuanlan.zhihu.com/p/676256783">知乎中文解读</a>]**
 
-
 </div>
 
 <p align="center">
@@ -44,9 +43,9 @@ This fork turns the original work into an installable package, to install:
 </p>
 
 ---
->
+
 > 🙋 Please let us know if you find out a mistake or have any suggestions!
-> 
+>
 > 🌟 If you find this resource helpful, please consider to star this repository and cite our research:
 
 ```
@@ -58,7 +57,8 @@ This fork turns the original work into an installable package, to install:
 }
 ```
 
-## Updates/News:
+## Updates/News
+
 🚩 **News** (Oct. 2025): Time-LLM has been cited 1,000 times in the past two years! 🎉 We are deeply grateful to the community for the incredible support along the journey.
 
 🚩 **News** (Aug. 2024): Time-LLM has been adopted by XiMou Optimization Technology Co., Ltd. (XMO) for Solar, Wind, and Weather Forecasting.
@@ -70,6 +70,7 @@ This fork turns the original work into an installable package, to install:
 🚩 **News** (Mar. 2024): Time-LLM has been upgraded to serve as a general framework for repurposing a wide range of language models to time series forecasting. It now defaults to supporting Llama-7B and includes compatibility with two additional smaller PLMs (GPT-2 and BERT). Simply adjust `--llm_model` and `--llm_dim` to switch backbones.
 
 ## Introduction
+
 Time-LLM is a reprogramming framework to repurpose LLMs for general time series forecasting with the backbone language models kept intact.
 Notably, we show that time series analysis (e.g., forecasting) can be cast as yet another "language task" that can be effectively tackled by an off-the-shelf LLM.
 
@@ -84,6 +85,7 @@ Notably, we show that time series analysis (e.g., forecasting) can be cast as ye
 </p>
 
 ## Requirements
+
 Use python 3.11 from MiniConda
 
 - torch==2.2.2
@@ -101,42 +103,47 @@ Use python 3.11 from MiniConda
 - sentencepiece==0.2.0
 
 To install all dependencies:
+
 ```
 pip install -r requirements.txt
 ```
 
 ## Datasets
+
 You can access the well pre-processed datasets from [[Google Drive]](https://drive.google.com/file/d/1NF7VEefXCmXuWNbnNe858WvQAkJ_7wuP/view?usp=sharing), then place the downloaded contents under `./dataset`
 
 ## Quick Demos
+
 1. Download datasets and place them under `./dataset`
 2. Tune the model. We provide five experiment scripts for demonstration purpose under the folder `./scripts`. For example, you can evaluate on ETT datasets by:
 
 ```bash
-bash ./scripts/TimeLLM_ETTh1.sh 
+bash ./scripts/TimeLLM_ETTh1.sh
 ```
+
 ```bash
-bash ./scripts/TimeLLM_ETTh2.sh 
+bash ./scripts/TimeLLM_ETTh2.sh
 ```
+
 ```bash
-bash ./scripts/TimeLLM_ETTm1.sh 
+bash ./scripts/TimeLLM_ETTm1.sh
 ```
+
 ```bash
 bash ./scripts/TimeLLM_ETTm2.sh
 ```
 
 ## Detailed usage
 
-Please refer to ```run_main.py```, ```run_m4.py``` and ```run_pretrain.py``` for the detailed description of each hyperparameter.
-
+Please refer to `run_main.py`, `run_m4.py` and `run_pretrain.py` for the detailed description of each hyperparameter.
 
 ## Further Reading
 
 As one of the earliest works exploring the intersection of large language models and time series, we sincerely thank the open-source community for supporting our research. While we do not plan to make major updates to the main Time-LLM codebase, we still welcome **constructive pull requests** to help maintain and improve it.
 
-🌟 Please check out our team’s latest research projects listed below. 
+🌟 Please check out our team’s latest research projects listed below.
 
-1, [**TimeOmni-1: Incentivizing Complex Reasoning with Time Series in Large Language Models**](https://arxiv.org/pdf/2509.24803), *arXiv* 2025.
+1, [**TimeOmni-1: Incentivizing Complex Reasoning with Time Series in Large Language Models**](https://arxiv.org/pdf/2509.24803), _arXiv_ 2025.
 
 **Authors**: Tong Guan, Zijie Meng, Dianqi Li, Shiyu Wang, Chao-Han Huck Yang, Qingsong Wen, Zuozhu Liu, Sabato Marco Siniscalchi, Ming Jin, Shirui Pan
 
@@ -149,7 +156,7 @@ As one of the earliest works exploring the intersection of large language models
 }
 ```
 
-2, [**Time-MQA: Time Series Multi-Task Question Answering with Context Enhancement**](https://arxiv.org/pdf/2503.01875), in *ACL* 2025.
+2, [**Time-MQA: Time Series Multi-Task Question Answering with Context Enhancement**](https://arxiv.org/pdf/2503.01875), in _ACL_ 2025.
 [\[HuggingFace\]](https://huggingface.co/Time-MQA)
 
 **Authors**: Yaxuan Kong, Yiyuan Yang, Yoontae Hwang, Wenjie Du, Stefan Zohren, Zhangyang Wang, Ming Jin, Qingsong Wen
@@ -163,7 +170,7 @@ As one of the earliest works exploring the intersection of large language models
 }
 ```
 
-3, [**Towards Neural Scaling Laws for Time Series Foundation Models**](https://arxiv.org/pdf/2410.12360), in *ICLR* 2025.
+3, [**Towards Neural Scaling Laws for Time Series Foundation Models**](https://arxiv.org/pdf/2410.12360), in _ICLR_ 2025.
 [\[GitHub Repo\]](https://github.com/Qingrenn/TSFM-ScalingLaws)
 
 **Authors**: Qingren Yao, Chao-Han Huck Yang, Renhe Jiang, Yuxuan Liang, Ming Jin, Shirui Pan
@@ -177,7 +184,7 @@ As one of the earliest works exploring the intersection of large language models
 }
 ```
 
-4, [**Time-MoE: Billion-Scale Time Series Foundation Models with Mixture of Experts**](https://arxiv.org/pdf/2409.16040), in *ICLR* 2025.
+4, [**Time-MoE: Billion-Scale Time Series Foundation Models with Mixture of Experts**](https://arxiv.org/pdf/2409.16040), in _ICLR_ 2025.
 [\[GitHub Repo\]](https://github.com/Time-MoE/Time-MoE)
 
 **Authors**: Xiaoming Shi, Shiyu Wang, Yuqi Nie, Dianqi Li, Zhou Ye, Qingsong Wen, Ming Jin
@@ -191,7 +198,7 @@ As one of the earliest works exploring the intersection of large language models
 }
 ```
 
-5, [**TimeMixer++: A General Time Series Pattern Machine for Universal Predictive Analysis**](https://arxiv.org/abs/2410.16032), in *ICLR* 2025.
+5, [**TimeMixer++: A General Time Series Pattern Machine for Universal Predictive Analysis**](https://arxiv.org/abs/2410.16032), in _ICLR_ 2025.
 [\[GitHub Repo\]](https://github.com/kwuking/TimeMixer/blob/main/README.md)
 
 **Authors**: Shiyu Wang, Jiawei Li, Xiaoming Shi, Zhou Ye, Baichuan Mo, Wenze Lin, Shengtong Ju, Zhixuan Chu, Ming Jin
@@ -206,4 +213,5 @@ As one of the earliest works exploring the intersection of large language models
 ```
 
 ## Acknowledgement
+
 Our implementation adapts [Time-Series-Library](https://github.com/thuml/Time-Series-Library) and [OFA (GPT4TS)](https://github.com/DAMO-DI-ML/NeurIPS2023-One-Fits-All) as the code base and have extensively modified it to our purposes. We thank the authors for sharing their implementations and related resources.

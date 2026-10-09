@@ -1,57 +1,59 @@
-import numpy as np
-import torch, random
-import matplotlib.pyplot as plt
+import random
 import shutil
-
-from tqdm import tqdm
-from pathlib import Path
 from argparse import Namespace
+from pathlib import Path
 from typing import Any
 
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
 from accelerate import Accelerator
-from argparse import Namespace
+from tqdm import tqdm
 
-plt.switch_backend('agg')
+plt.switch_backend("agg")
 
 
 def adjust_learning_rate(
-        accelerator: Accelerator | None = None,
-        optimizer: torch.optim.Optimizer | None = None,
-        scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
-        epoch: int | None = None,
-        args: Namespace | None = None,
-        printout: bool = True
+    accelerator: Accelerator | None = None,
+    optimizer: torch.optim.Optimizer | None = None,
+    scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
+    epoch: int | None = None,
+    args: Namespace | None = None,
+    printout: bool = True,
 ) -> None:
     lr_adjust = {}
-    if args.lradj == 'type1':
+    if args.lradj == "type1":
         lr_adjust = {epoch: args.learning_rate * (0.5 ** ((epoch - 1) // 1))}
-    elif args.lradj == 'type2':
+    elif args.lradj == "type2":
+        lr_adjust = {2: 5e-5, 4: 1e-5, 6: 5e-6, 8: 1e-6, 10: 5e-7, 15: 1e-7, 20: 5e-8}
+    elif args.lradj == "type3":
         lr_adjust = {
-            2: 5e-5, 4: 1e-5, 6: 5e-6, 8: 1e-6,
-            10: 5e-7, 15: 1e-7, 20: 5e-8
+            epoch: args.learning_rate
+            if epoch < 3
+            else args.learning_rate * (0.9 ** ((epoch - 3) // 1))
         }
-    elif args.lradj == 'type3':
-        lr_adjust = {epoch: args.learning_rate if epoch < 3 else args.learning_rate * (0.9 ** ((epoch - 3) // 1))}
-    elif args.lradj == 'PEMS':
+    elif args.lradj == "PEMS":
         lr_adjust = {epoch: args.learning_rate * (0.95 ** (epoch // 1))}
-    elif args.lradj == 'TST':
+    elif args.lradj == "TST":
         lr_adjust = {epoch: scheduler.get_last_lr()[0]}
-    elif args.lradj == 'constant':
+    elif args.lradj == "constant":
         lr_adjust = {epoch: args.learning_rate}
 
     if epoch in lr_adjust.keys():
         lr = lr_adjust[epoch]
         for param_group in optimizer.param_groups:
-            param_group['lr'] = lr
+            param_group["lr"] = lr
         if printout:
             if accelerator is not None:
-                accelerator.print('Updating learning rate to {}'.format(lr))
+                accelerator.print(f"Updating learning rate to {lr}")
             else:
-                print('Updating learning rate to {}'.format(lr))
+                print(f"Updating learning rate to {lr}")
 
 
 class EarlyStopping:
-    def __init__(self, accelerator=None, patience=7, verbose=False, delta=0, save_mode=True):
+    def __init__(
+        self, accelerator=None, patience=7, verbose=False, delta=0, save_mode=True
+    ):
         """
         Identify when to save training progress, and save it when conditions are met.
 
@@ -75,12 +77,14 @@ class EarlyStopping:
         self.delta = delta
         self.save_mode = save_mode
 
-    def __call__(self,
-                 val_loss: float,
-                 model: torch.nn.Module,
-                 path: Path | str,
-                 optimizer: torch.optim.Optimizer | None = None,
-                 scheduler: torch.optim.lr_scheduler.LRScheduler | None = None):
+    def __call__(
+        self,
+        val_loss: float,
+        model: torch.nn.Module,
+        path: Path | str,
+        optimizer: torch.optim.Optimizer | None = None,
+        scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
+    ):
         """
         Compare current score with best score and update early stopping counter.
 
@@ -104,9 +108,11 @@ class EarlyStopping:
         elif score < self.best_score + self.delta:
             self.counter += 1
             if self.accelerator is None:
-                print(f'EarlyStopping counter: {self.counter} out of {self.patience}')
+                print(f"EarlyStopping counter: {self.counter} out of {self.patience}")
             else:
-                self.accelerator.print(f'EarlyStopping counter: {self.counter} out of {self.patience}')
+                self.accelerator.print(
+                    f"EarlyStopping counter: {self.counter} out of {self.patience}"
+                )
             if self.counter >= self.patience:
                 self.early_stop = True
         else:
@@ -115,13 +121,14 @@ class EarlyStopping:
                 self.save_checkpoint(val_loss, model, path, optimizer, scheduler)
             self.counter = 0
 
-    def save_checkpoint(self,
-                        val_loss: float,
-                        model: torch.nn.Module,
-                        path: str | Path,
-                        optimizer: torch.optim.Optimizer | None = None,
-                        scheduler: torch.optim.lr_scheduler.LRScheduler | None = None
-                        ) -> None:
+    def save_checkpoint(
+        self,
+        val_loss: float,
+        model: torch.nn.Module,
+        path: str | Path,
+        optimizer: torch.optim.Optimizer | None = None,
+        scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
+    ) -> None:
         """
         Save a general checkpoint for inference and/or resuming training.
 
@@ -135,8 +142,10 @@ class EarlyStopping:
         :param scheduler: learning rate scheduler, optional
         """
         if self.verbose:
-            save_msg = (f'Validation loss decreased ({self.val_loss_min:.6f} --> '
-                        f'{val_loss:.6f}).  Saving model ...')
+            save_msg = (
+                f"Validation loss decreased ({self.val_loss_min:.6f} --> "
+                f"{val_loss:.6f}).  Saving model ..."
+            )
             if self.accelerator is not None:
                 self.accelerator.print(save_msg)
             else:
@@ -149,20 +158,21 @@ class EarlyStopping:
         path = Path(path)
         if path.is_dir():
             # For retro-compatibility with original Time-LLM
-            path = path / 'checkpoint.pth'
-        elif path.suffix == '':
-            path = path / '.pth'
+            path = path / "checkpoint.pth"
+        elif path.suffix == "":
+            path = path / ".pth"
         torch.save(model_dict, path)
 
         self.val_loss_min = val_loss
 
 
-def create_checkpoint_dict(model: torch.nn.Module,
-                           loss: float,
-                           epoch: int | None = None,
-                           optimizer: torch.optim.Optimizer | None = None,
-                           scheduler: torch.optim.lr_scheduler.LRScheduler | None = None
-                           ) -> dict[str, Any]:
+def create_checkpoint_dict(
+    model: torch.nn.Module,
+    loss: float,
+    epoch: int | None = None,
+    optimizer: torch.optim.Optimizer | None = None,
+    scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
+) -> dict[str, Any]:
     """
     Create a general checkpoint for inference and/or resuming training.
 
@@ -171,23 +181,24 @@ def create_checkpoint_dict(model: torch.nn.Module,
     To be used with save_checkpoint of class EarlyStopping.
     """
     checkpoint = {
-        'model': model.state_dict(),
-        'loss': loss,
-        'epoch': epoch,
-        'optimizer': optimizer.state_dict() if optimizer is not None else None,
-        'scheduler': scheduler.state_dict() if scheduler is not None else None,
+        "model": model.state_dict(),
+        "loss": loss,
+        "epoch": epoch,
+        "optimizer": optimizer.state_dict() if optimizer is not None else None,
+        "scheduler": scheduler.state_dict() if scheduler is not None else None,
     }
     return checkpoint
 
 
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
+
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
 
-class StandardScaler():
+class StandardScaler:
     def __init__(self, mean, std):
         self.mean = mean
         self.std = std
@@ -198,6 +209,7 @@ class StandardScaler():
     def inverse_transform(self, data):
         return (data * self.std) + self.mean
 
+
 def adjustment(gt, pred):
     anomaly_state = False
     for i in range(len(gt)):
@@ -206,15 +218,13 @@ def adjustment(gt, pred):
             for j in range(i, 0, -1):
                 if gt[j] == 0:
                     break
-                else:
-                    if pred[j] == 0:
-                        pred[j] = 1
+                if pred[j] == 0:
+                    pred[j] = 1
             for j in range(i, len(gt)):
                 if gt[j] == 0:
                     break
-                else:
-                    if pred[j] == 0:
-                        pred[j] = 1
+                if pred[j] == 0:
+                    pred[j] = 1
         elif gt[i] == 0:
             anomaly_state = False
         if anomaly_state:
@@ -235,7 +245,9 @@ def vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric
     total_mae_loss = []
     model.eval()
     with torch.no_grad():
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(vali_loader)):
+        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(
+            enumerate(vali_loader)
+        ):
             batch_x = batch_x.float().to(accelerator.device)
             batch_y = batch_y.float()
 
@@ -243,9 +255,12 @@ def vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric
             batch_y_mark = batch_y_mark.float().to(accelerator.device)
 
             # decoder input
-            dec_inp = torch.zeros_like(batch_y[:, -args.pred_len:, :]).float()
-            dec_inp = torch.cat([batch_y[:, :args.label_len, :], dec_inp], dim=1).float().to(
-                accelerator.device)
+            dec_inp = torch.zeros_like(batch_y[:, -args.pred_len :, :]).float()
+            dec_inp = (
+                torch.cat([batch_y[:, : args.label_len, :], dec_inp], dim=1)
+                .float()
+                .to(accelerator.device)
+            )
             # encoder - decoder
             if args.use_amp:
                 with torch.cuda.amp.autocast():
@@ -253,17 +268,16 @@ def vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric
                         outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                     else:
                         outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+            elif args.output_attention:
+                outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
             else:
-                if args.output_attention:
-                    outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                else:
-                    outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
             outputs, batch_y = accelerator.gather_for_metrics((outputs, batch_y))
 
-            f_dim = -1 if args.features == 'MS' else 0
-            outputs = outputs[:, -args.pred_len:, f_dim:]
-            batch_y = batch_y[:, -args.pred_len:, f_dim:].to(accelerator.device)
+            f_dim = -1 if args.features == "MS" else 0
+            outputs = outputs[:, -args.pred_len :, f_dim:]
+            batch_y = batch_y[:, -args.pred_len :, f_dim:].to(accelerator.device)
 
             pred = outputs.detach()
             true = batch_y.detach()
@@ -288,7 +302,9 @@ def vali_pulsar(args, accelerator, model, discr, vali_data, vali_loader, criteri
     model.eval()
     discr.eval()
     with torch.no_grad():
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(vali_loader)):
+        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(
+            enumerate(vali_loader)
+        ):
             batch_x = batch_x.float().to(accelerator.device)
             batch_y = batch_y.float()
 
@@ -296,25 +312,35 @@ def vali_pulsar(args, accelerator, model, discr, vali_data, vali_loader, criteri
             batch_y_mark = batch_y_mark.float().to(accelerator.device)
 
             # decoder input
-            dec_inp = torch.zeros_like(batch_y[:, -args.pred_len:, :]).float()
-            dec_inp = torch.cat([batch_y[:, :args.label_len, :], dec_inp], dim=1).float().to(
-                accelerator.device)
+            dec_inp = torch.zeros_like(batch_y[:, -args.pred_len :, :]).float()
+            dec_inp = (
+                torch.cat([batch_y[:, : args.label_len, :], dec_inp], dim=1)
+                .float()
+                .to(accelerator.device)
+            )
             # encoder - decoder
             outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
             outputs, batch_y = accelerator.gather_for_metrics((outputs, batch_y))
 
-            f_dim = -1 if args.features == 'MS' else 0
-            outputs = outputs[:, -args.pred_len:, f_dim:]
-            batch_y = batch_y[:, -args.pred_len:, f_dim:].to(accelerator.device)
+            f_dim = -1 if args.features == "MS" else 0
+            outputs = outputs[:, -args.pred_len :, f_dim:]
+            batch_y = batch_y[:, -args.pred_len :, f_dim:].to(accelerator.device)
 
             pred_dlabels = discr(outputs).detach()
             true_dlabels = discr(batch_y).detach()
 
-            loss = criterion(pred_dlabels, torch.full(pred_dlabels.shape, 1.0, device=accelerator.device))
-            loss_d = criterion(pred_dlabels, torch.full(
-                pred_dlabels.shape, 0.0, device=accelerator.device)) + criterion(
-                true_dlabels, torch.full(pred_dlabels.shape, 1.0, device=accelerator.device))
+            loss = criterion(
+                pred_dlabels,
+                torch.full(pred_dlabels.shape, 1.0, device=accelerator.device),
+            )
+            loss_d = criterion(
+                pred_dlabels,
+                torch.full(pred_dlabels.shape, 0.0, device=accelerator.device),
+            ) + criterion(
+                true_dlabels,
+                torch.full(pred_dlabels.shape, 1.0, device=accelerator.device),
+            )
 
             total_loss.append(loss.item())
             total_loss_d.append(loss_d.item())
@@ -324,7 +350,12 @@ def vali_pulsar(args, accelerator, model, discr, vali_data, vali_loader, criteri
 
     model.train()
     discr.eval()
-    return total_loss, total_loss_d, pred_dlabels.mean().cpu(), true_dlabels.mean().cpu()
+    return (
+        total_loss,
+        total_loss_d,
+        pred_dlabels.mean().cpu(),
+        true_dlabels.mean().cpu(),
+    )
 
 
 def test(args, accelerator, model, train_loader, vali_loader, criterion):
@@ -337,28 +368,30 @@ def test(args, accelerator, model, train_loader, vali_loader, criterion):
     with torch.no_grad():
         B, _, C = x.shape
         dec_inp = torch.zeros((B, args.pred_len, C)).float().to(accelerator.device)
-        dec_inp = torch.cat([x[:, -args.label_len:, :], dec_inp], dim=1)
+        dec_inp = torch.cat([x[:, -args.label_len :, :], dec_inp], dim=1)
         outputs = torch.zeros((B, args.pred_len, C)).float().to(accelerator.device)
         id_list = np.arange(0, B, args.eval_batch_size)
         id_list = np.append(id_list, B)
         for i in range(len(id_list) - 1):
-            outputs[id_list[i]:id_list[i + 1], :, :] = model(
-                x[id_list[i]:id_list[i + 1]],
+            outputs[id_list[i] : id_list[i + 1], :, :] = model(
+                x[id_list[i] : id_list[i + 1]],
                 None,
-                dec_inp[id_list[i]:id_list[i + 1]],
-                None
+                dec_inp[id_list[i] : id_list[i + 1]],
+                None,
             )
         accelerator.wait_for_everyone()
         outputs = accelerator.gather_for_metrics(outputs)
-        f_dim = -1 if args.features == 'MS' else 0
-        outputs = outputs[:, -args.pred_len:, f_dim:]
+        f_dim = -1 if args.features == "MS" else 0
+        outputs = outputs[:, -args.pred_len :, f_dim:]
         pred = outputs
         true = torch.from_numpy(np.array(y)).to(accelerator.device)
         batch_y_mark = torch.ones(true.shape).to(accelerator.device)
         true = accelerator.gather_for_metrics(true)
         batch_y_mark = accelerator.gather_for_metrics(batch_y_mark)
 
-        loss = criterion(x[:, :, 0], args.frequency_map, pred[:, :, 0], true, batch_y_mark)
+        loss = criterion(
+            x[:, :, 0], args.frequency_map, pred[:, :, 0], true, batch_y_mark
+        )
 
     model.train()
     return loss
@@ -382,20 +415,22 @@ def load_content(args: Namespace, *, prompt_bank: Path | None = None):
 
     Returns:
         Content of the prompt file.
-    """
 
+    """
     # Ensures compatibilty with orginal Time-LLM
-    if 'ETT' in args.data:
-        file = 'ETT'
+    if "ETT" in args.data:
+        file = "ETT"
     else:
         file = args.data
     file = Path(file)
     if not file.suffix:
-        file = file.with_suffix('.txt')
+        file = file.with_suffix(".txt")
 
     if prompt_bank is None:
         # Safer than importlib.resources.files
-        prompt_bank = Path(__file__).parent.parent.parent.parent / "dataset" / "prompt_bank"
+        prompt_bank = (
+            Path(__file__).parent.parent.parent.parent / "dataset" / "prompt_bank"
+        )
 
     if file.exists():
         file_location = file
@@ -406,6 +441,7 @@ def load_content(args: Namespace, *, prompt_bank: Path | None = None):
 
     with file_location.open("r") as f:
         return f.read()
+
 
 def seed_worker(worker_id):
     worker_seed = torch.initial_seed() % 2**32
