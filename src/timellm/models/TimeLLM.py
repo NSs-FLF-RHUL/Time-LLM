@@ -32,11 +32,11 @@ class FlattenHead(nn.Module):
         self.linear = nn.Linear(nf, target_window)
         self.dropout = nn.Dropout(head_dropout)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass."""
         x = self.flatten(x)
         x = self.linear(x)
-        x = self.dropout(x)
-        return x
+        return self.dropout(x)
 
 
 class Model(nn.Module):
