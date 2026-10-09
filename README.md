@@ -1,49 +1,47 @@
+<!-- Temporary fix to not upset page formatting.
+In future, we should move most of the information in the README to
+a dedicated docs page, where we can control the size of images etc.
+-- >
+<!-- markdownlint-disable MD033 -->
+
 # TimeLLM
 
 > [!IMPORTANT]
 > This is a fork of the original [Time-LLM repository](https://github.com/KimMeen/Time-LLM).
 > Please credit their work using the citation information below.
->This fork turns the original work into an installable package, to install:
 >
-> - Clone this repository
-> - Activate the Python environment you want to install into
-> - In the directory which you cloned this project into, run `pip install .`
+> This fork turns the original work into an installable package.
+> See [the installation instructions](#installation) below for how to get started.
 
-## (ICLR'24) Time-LLM: Time Series Forecasting by Reprogramming Large Language Models
+## [(ICLR'24) Time-LLM: Time Series Forecasting by Reprogramming Large Language Models](https://github.com/KimMeen/Time-LLM)
 
 ![Last commit badge](https://img.shields.io/github/last-commit/KimMeen/Time-LLM?color=green)
 ![Number of stars badge](https://img.shields.io/github/stars/KimMeen/Time-LLM?color=yellow)
 ![Number of forks badge](https://img.shields.io/github/forks/KimMeen/Time-LLM?color=lightblue)
 ![PRs welcome badge](https://img.shields.io/badge/PRs-Welcome-green)
 
-<div align="center">
+| **[Paper Page](https://arxiv.org/abs/2310.01728)**
+| **[YouTube Talk](https://www.youtube.com/watch?v=6sFiNExS3nI)**
+| **[YouTube Talk 2](https://www.youtube.com/watch?v=L-hRexVa32k)**
+| **[Medium Blog](https://medium.com/towards-data-science/time-llm-reprogram-an-llm-for-time-series-forecasting-e2558087b8ac)**
 
-**[<a href="https://arxiv.org/abs/2310.01728">Paper Page</a>]**
-**[<a href="https://www.youtube.com/watch?v=6sFiNExS3nI">YouTube Talk 1</a>]**
-**[<a href="https://www.youtube.com/watch?v=L-hRexVa32k">YouTube Talk 2</a>]**
-**[<a href="https://medium.com/towards-data-science/time-llm-reprogram-an-llm-for-time-series-forecasting-e2558087b8ac">Medium Blog</a>]**
-
-**[<a href="https://www.jiqizhixin.com/articles/2024-04-15?from=synced&keyword=TIME-LLM">机器之心中文解读</a>]**
-**[<a href="https://mp.weixin.qq.com/s/UL_Kl0PzgfYHOnq7d3vM8Q">量子位中文解读</a>]**
-**[<a href="https://mp.weixin.qq.com/s/FSxUdvPI713J2LiHnNaFCw">时序人中文解读</a>]**
-**[<a href="https://mp.weixin.qq.com/s/nUiQGnHOkWznoBPqM0KHXg">AI算法厨房中文解读</a>]**
-**[<a href="https://zhuanlan.zhihu.com/p/676256783">知乎中文解读</a>]**
-
-</div>
+| **[机器之心中文解读](https://www.jiqizhixin.com/articles/2024-04-15?from=synced&keyword=TIME-LLM)**
+| **[量子位中文解读](https://mp.weixin.qq.com/s/UL_Kl0PzgfYHOnq7d3vM8Q)**
+| **[时序人中文解读](https://mp.weixin.qq.com/s/FSxUdvPI713J2LiHnNaFCw)**
+| **[AI算法厨房中文解读](https://mp.weixin.qq.com/s/nUiQGnHOkWznoBPqM0KHXg)**
+| **[知乎中文解读](https://zhuanlan.zhihu.com/p/676256783)**
 
 <p align="center">
-
-<img src="./figures/logo.png" width="70">
-
+<img src="./figures/logo.png" width="70" alt="TimeLLM logo">
 </p>
 
 ---
 
 > 🙋 Please let us know if you find out a mistake or have any suggestions!
 >
-> 🌟 If you find this resource helpful, please consider to star this repository and cite our research:
+> 🌟 If you find this resource helpful, please consider to star this repository and cite the original author's research:
 
-```
+```tex
 @inproceedings{jin2023time,
   title={{Time-LLM}: Time series forecasting by reprogramming large language models},
   author={Jin, Ming and Wang, Shiyu and Ma, Lintao and Chu, Zhixuan and Zhang, James Y and Shi, Xiaoming and Chen, Pin-Yu and Liang, Yuxuan and Li, Yuan-Fang and Pan, Shirui and Wen, Qingsong},
@@ -79,28 +77,29 @@ Notably, we show that time series analysis (e.g., forecasting) can be cast as ye
 <img src="./figures/method-detailed-illustration.png" height = "190" alt="" align=center />
 </p>
 
-## Requirements
+## Installation
 
-Use python 3.11 from MiniConda
+We recommend that you create a virtual environment (for example with `conda` or `uv`) to install `timellm` into, or install it into the existing virtual environment for the project that you want to use it with.
 
-- torch==2.2.2
-- accelerate==0.28.0
-- einops==0.7.0
-- matplotlib==3.7.0
-- numpy==1.23.5
-- pandas==1.5.3
-- scikit_learn==1.2.2
-- scipy==1.12.0
-- tqdm==4.65.0
-- peft==0.4.0
-- transformers==4.31.0
-- deepspeed==0.14.0
-- sentencepiece==0.2.0
+Once you have created a virtual environment, you can install the package either directly from GitHub (recommended) or by cloning the repository and locally installing (recommended for developers / contributors).
 
-To install all dependencies:
+To install from GitHub, in your chosen virtual environment, run
 
+```sh
+pip install git+https://github.com/NSs-FLF-RHUL/Time-LLM.git
 ```
-pip install -r requirements.txt
+
+To clone and install locally, in your chosen virtual environment, run
+
+```sh
+cd path/to/where/you/want/your/local/copy/to/be
+git clone https://github.com/NSs-FLF-RHUL/Time-LLM.git
+cd Time-LLM
+# To install normally, run
+pip install .
+# To create an editable installation and fetch additional
+# developer dependences (recommended for developers), run
+pip install -e .[dev]
 ```
 
 ## Datasets
