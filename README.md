@@ -1,25 +1,20 @@
-This is a fork of the original [Time-LLM repository](https://github.com/KimMeen/Time-LLM).
-Please credit their work using the citation information below.
-This fork turns the original work into an installable package, to install:
+# TimeLLM
 
-- Clone this repository
-- Activate the Python environment you want to install into
-- In the directory which you cloned this project into, run `pip install .`
+> [!IMPORTANT]
+> This is a fork of the original [Time-LLM repository](https://github.com/KimMeen/Time-LLM).
+> Please credit their work using the citation information below.
+>This fork turns the original work into an installable package, to install:
+>
+> - Clone this repository
+> - Activate the Python environment you want to install into
+> - In the directory which you cloned this project into, run `pip install .`
 
-<div align="center">
-  <!-- <h1><b> Time-LLM </b></h1> -->
-  <!-- <h2><b> Time-LLM </b></h2> -->
-  <h2><b> (ICLR'24) Time-LLM: Time Series Forecasting by Reprogramming Large Language Models </b></h2>
-</div>
+## (ICLR'24) Time-LLM: Time Series Forecasting by Reprogramming Large Language Models
 
-<div align="center">
-
-![](https://img.shields.io/github/last-commit/KimMeen/Time-LLM?color=green)
-![](https://img.shields.io/github/stars/KimMeen/Time-LLM?color=yellow)
-![](https://img.shields.io/github/forks/KimMeen/Time-LLM?color=lightblue)
-![](https://img.shields.io/badge/PRs-Welcome-green)
-
-</div>
+![Last commit badge](https://img.shields.io/github/last-commit/KimMeen/Time-LLM?color=green)
+![Number of stars badge](https://img.shields.io/github/stars/KimMeen/Time-LLM?color=yellow)
+![Number of forks badge](https://img.shields.io/github/forks/KimMeen/Time-LLM?color=lightblue)
+![PRs welcome badge](https://img.shields.io/badge/PRs-Welcome-green)
 
 <div align="center">
 
