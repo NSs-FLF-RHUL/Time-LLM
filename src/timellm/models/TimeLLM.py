@@ -314,18 +314,30 @@ class ReprogrammingLayer(nn.Module):
         self.dropout = nn.Dropout(attention_dropout)
         self.attn_mean = None
 
-    def forward(self, target_embedding, source_embedding, value_embedding):
-        B, L, _ = target_embedding.shape
-        S, _ = source_embedding.shape
-        H = self.n_heads
+    def forward(
+        self,
+        target_embedding: torch.Tensor,
+        source_embedding: torch.Tensor,
+        value_embedding: torch.Tensor,
+    ) -> torch.Tensor:
+        """Forward pass."""
+        nbatches, npatches, _ = target_embedding.shape
+        nprototypes, _ = source_embedding.shape
+        nheads = self.n_heads
 
-        target_embedding = self.query_projection(target_embedding).view(B, L, H, -1)
-        source_embedding = self.key_projection(source_embedding).view(S, H, -1)
-        value_embedding = self.value_projection(value_embedding).view(S, H, -1)
+        target_embedding = self.query_projection(target_embedding).view(
+            nbatches, npatches, nheads, -1
+        )
+        source_embedding = self.key_projection(source_embedding).view(
+            nprototypes, nheads, -1
+        )
+        value_embedding = self.value_projection(value_embedding).view(
+            nprototypes, nheads, -1
+        )
 
         out = self.reprogramming(target_embedding, source_embedding, value_embedding)
 
-        out = out.reshape(B, L, -1)
+        out = out.reshape(nbatches, npatches, -1)
 
         return self.out_projection(out)
 
