@@ -219,15 +219,16 @@ class Model(nn.Module):
             self.task_name == "long_term_forecast"
             or self.task_name == "short_term_forecast"
         ):
-            dec_out = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec)
+            dec_out = self.forecast(x_enc)
             return dec_out[:, -self.pred_len :, :]
         return None
 
-    def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
+    def forecast(self, x_enc: torch.Tensor) -> torch.Tensor:
+        """Forecast time series."""
         x_enc = self.normalize_layers(x_enc, "norm")
 
-        B, T, N = x_enc.size()
-        x_enc = x_enc.permute(0, 2, 1).contiguous().reshape(B * N, T, 1)
+        nbatches, seq_len, nvar = x_enc.size()
+        x_enc = x_enc.permute(0, 2, 1).contiguous().reshape(nbatches * nvar, seq_len, 1)
 
         min_values = torch.min(x_enc, dim=1)[0]
         max_values = torch.max(x_enc, dim=1)[0]
@@ -243,7 +244,8 @@ class Model(nn.Module):
             lags_values_str = str(lags[b].tolist())
             prompt_ = (
                 f"<|start_prompt|>Dataset description: {self.description}"
-                f"Task description: forecast the next {self.pred_len!s} steps given the previous {self.seq_len!s} steps information; "
+                f"Task description: forecast the next {self.pred_len!s} "
+                f"steps given the previous {self.seq_len!s} steps information; "
                 "Input statistics: "
                 f"min value {min_values_str}, "
                 f"max value {max_values_str}, "
@@ -254,7 +256,7 @@ class Model(nn.Module):
 
             prompt.append(prompt_)
 
-        x_enc = x_enc.reshape(B, N, T).permute(0, 2, 1).contiguous()
+        x_enc = x_enc.reshape(nbatches, nvar, seq_len).permute(0, 2, 1).contiguous()
 
         prompt = self.tokenizer(
             prompt, return_tensors="pt", padding=True, truncation=True, max_length=2048
@@ -284,9 +286,7 @@ class Model(nn.Module):
         dec_out = self.output_projection(dec_out[:, :, :, -self.patch_nums :])
         dec_out = dec_out.permute(0, 2, 1).contiguous()
 
-        dec_out = self.normalize_layers(dec_out, "denorm")
-
-        return dec_out
+        return self.normalize_layers(dec_out, "denorm")
 
     def calcute_lags(self, x_enc: torch.Tensor) -> torch.Tensor:
         """Calculate lags."""
