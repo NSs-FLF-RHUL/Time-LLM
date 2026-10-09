@@ -299,10 +299,18 @@ class Model(nn.Module):
 
 
 class ReprogrammingLayer(nn.Module):
+    """Reprogramming layer class."""
+
     def __init__(
-        self, d_model, n_heads, d_keys=None, d_llm=None, attention_dropout=0.1
-    ):
-        super(ReprogrammingLayer, self).__init__()
+        self,
+        d_model: int,
+        n_heads: int,
+        d_keys: int | None = None,
+        d_llm: int | None = None,
+        attention_dropout: float = 0.1,
+    ) -> None:
+        """Initialize the reprogramming layer."""
+        super().__init__()
 
         d_keys = d_keys or (d_model // n_heads)
 
