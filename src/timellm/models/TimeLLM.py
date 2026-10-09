@@ -22,7 +22,10 @@ transformers.logging.set_verbosity_error()
 
 
 class FlattenHead(nn.Module):
-    def __init__(self, n_vars, nf, target_window, head_dropout=0):
+    def __init__(
+        self, n_vars: int, nf: int, target_window: int, head_dropout: float = 0
+    ) -> None:
+        """Initialize FlattenHead."""
         super().__init__()
         self.n_vars = n_vars
         self.flatten = nn.Flatten(start_dim=-2)
