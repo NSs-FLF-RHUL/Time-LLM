@@ -12,18 +12,19 @@
 # protection. No license to patents is granted hereunder (whether express or
 # implied). Copyright © 2020 Element AI Inc. All rights reserved.
 
-"""
-Loss functions for PyTorch.
-"""
+"""Loss functions for PyTorch."""
 
 import numpy as np
 import torch as t
 from torch import nn
 
 
-def divide_no_nan(a, b):
+def divide_no_nan(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """
     a/b where the resulted NaN or Inf are replaced by 0.
+
+    TODO: Replace with np.where and np.nan_to_num to replace safely.
+    But this will require us to write a test for this method first!
     """
     result = a / b
     result[result != result] = 0.0
@@ -32,8 +33,11 @@ def divide_no_nan(a, b):
 
 
 class mape_loss(nn.Module):
-    def __init__(self):
-        super(mape_loss, self).__init__()
+    """FIXME."""
+
+    def __init__(self) -> None:
+        """FIXME - can just be removed?."""
+        super().__init__()
 
     def forward(
         self,
@@ -42,9 +46,11 @@ class mape_loss(nn.Module):
         forecast: t.Tensor,
         target: t.Tensor,
         mask: t.Tensor,
-    ) -> t.float:
+    ) -> float:
         """
-        MAPE loss as defined in: https://en.wikipedia.org/wiki/Mean_absolute_percentage_error
+        MAPE loss.
+
+        See https://en.wikipedia.org/wiki/Mean_absolute_percentage_error for definition.
 
         :param forecast: Forecast values. Shape: batch, time
         :param target: Target values. Shape: batch, time
@@ -56,8 +62,11 @@ class mape_loss(nn.Module):
 
 
 class smape_loss(nn.Module):
-    def __init__(self):
-        super(smape_loss, self).__init__()
+    """FIXME."""
+
+    def __init__(self) -> None:
+        """FIXME - can just be removed?."""
+        super().__init__()
 
     def forward(
         self,
@@ -66,9 +75,11 @@ class smape_loss(nn.Module):
         forecast: t.Tensor,
         target: t.Tensor,
         mask: t.Tensor,
-    ) -> t.float:
+    ) -> float:
         """
-        SMAPE loss as defined in https://robjhyndman.com/hyndsight/smape/ (Makridakis 1993)
+        SMAPE loss.
+
+        See https://robjhyndman.com/hyndsight/smape/ (Makridakis 1993) for definition.
 
         :param forecast: Forecast values. Shape: batch, time
         :param target: Target values. Shape: batch, time
@@ -84,8 +95,11 @@ class smape_loss(nn.Module):
 
 
 class mase_loss(nn.Module):
-    def __init__(self):
-        super(mase_loss, self).__init__()
+    """FIXME."""
+
+    def __init__(self) -> None:
+        """FIXME - can just be removed?."""
+        super().__init__()
 
     def forward(
         self,
@@ -94,9 +108,11 @@ class mase_loss(nn.Module):
         forecast: t.Tensor,
         target: t.Tensor,
         mask: t.Tensor,
-    ) -> t.float:
+    ) -> float:
         """
-        MASE loss as defined in "Scaled Errors" https://robjhyndman.com/papers/mase.pdf
+        MASE loss.
+
+        See "Scaled Errors" https://robjhyndman.com/papers/mase.pdf for definition.
 
         :param insample: Insample values. Shape: batch, time_i
         :param freq: Frequency value
