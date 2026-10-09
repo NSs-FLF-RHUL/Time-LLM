@@ -1,3 +1,4 @@
+from argparse import Namespace
 from math import sqrt
 
 import torch
@@ -42,8 +43,9 @@ class FlattenHead(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, configs, patch_len=16, stride=8):
-        super(Model, self).__init__()
+    def __init__(self, configs: Namespace) -> None:
+        """Initialize timellm model."""
+        super().__init__()
         self.task_name = configs.task_name
         self.pred_len = configs.pred_len
         self.seq_len = configs.seq_len
@@ -54,80 +56,43 @@ class Model(nn.Module):
         self.stride = configs.stride
 
         if configs.llm_model == "LLAMA":
-            # self.llama_config = LlamaConfig.from_pretrained('/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/')
             self.llama_config = LlamaConfig.from_pretrained("huggyllama/llama-7b")
             self.llama_config.num_hidden_layers = configs.llm_layers
             self.llama_config.output_attentions = True
             self.llama_config.output_hidden_states = True
-            try:
-                self.llm_model = LlamaModel.from_pretrained(
-                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/",
-                    "huggyllama/llama-7b",
-                    trust_remote_code=True,
-                    local_files_only=True,
-                    config=self.llama_config,
-                    # load_in_4bit=True
-                )
-            except OSError:  # downloads model from HF is not already done
-                print("Local model files not found. Attempting to download...")
-                self.llm_model = LlamaModel.from_pretrained(
-                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/",
-                    "huggyllama/llama-7b",
-                    trust_remote_code=True,
-                    local_files_only=False,
-                    config=self.llama_config,
-                    # load_in_4bit=True
-                )
-            try:
-                self.tokenizer = LlamaTokenizer.from_pretrained(
-                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/tokenizer.model",
-                    "huggyllama/llama-7b",
-                    trust_remote_code=True,
-                    local_files_only=True,
-                )
-            except OSError:  # downloads the tokenizer from HF if not already done
-                print("Local tokenizer files not found. Atempting to download them..")
-                self.tokenizer = LlamaTokenizer.from_pretrained(
-                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/tokenizer.model",
-                    "huggyllama/llama-7b",
-                    trust_remote_code=True,
-                    local_files_only=False,
-                )
+
+            self.llm_model = LlamaModel.from_pretrained(
+                "huggyllama/llama-7b",
+                trust_remote_code=True,
+                local_files_only=False,
+                config=self.llama_config,
+            )
+
+            self.tokenizer = LlamaTokenizer.from_pretrained(
+                "huggyllama/llama-7b",
+                trust_remote_code=True,
+                local_files_only=False,
+            )
+
         elif configs.llm_model == "GPT2":
             self.gpt2_config = GPT2Config.from_pretrained("openai-community/gpt2")
 
             self.gpt2_config.num_hidden_layers = configs.llm_layers
             self.gpt2_config.output_attentions = True
             self.gpt2_config.output_hidden_states = True
-            try:
-                self.llm_model = GPT2Model.from_pretrained(
-                    "openai-community/gpt2",
-                    trust_remote_code=True,
-                    local_files_only=True,
-                    config=self.gpt2_config,
-                )
-            except OSError:  # downloads model from HF is not already done
-                print("Local model files not found. Attempting to download...")
-                self.llm_model = GPT2Model.from_pretrained(
-                    "openai-community/gpt2",
-                    trust_remote_code=True,
-                    local_files_only=False,
-                    config=self.gpt2_config,
-                )
+            self.llm_model = GPT2Model.from_pretrained(
+                "openai-community/gpt2",
+                trust_remote_code=True,
+                local_files_only=False,
+                config=self.gpt2_config,
+            )
 
-            try:
-                self.tokenizer = GPT2Tokenizer.from_pretrained(
-                    "openai-community/gpt2",
-                    trust_remote_code=True,
-                    local_files_only=True,
-                )
-            except OSError:  # downloads the tokenizer from HF if not already done
-                print("Local tokenizer files not found. Atempting to download them..")
-                self.tokenizer = GPT2Tokenizer.from_pretrained(
-                    "openai-community/gpt2",
-                    trust_remote_code=True,
-                    local_files_only=False,
-                )
+            self.tokenizer = GPT2Tokenizer.from_pretrained(
+                "openai-community/gpt2",
+                trust_remote_code=True,
+                local_files_only=False,
+            )
+
         elif configs.llm_model == "BERT":
             self.bert_config = BertConfig.from_pretrained(
                 "google-bert/bert-base-uncased"
@@ -136,37 +101,20 @@ class Model(nn.Module):
             self.bert_config.num_hidden_layers = configs.llm_layers
             self.bert_config.output_attentions = True
             self.bert_config.output_hidden_states = True
-            try:
-                self.llm_model = BertModel.from_pretrained(
-                    "google-bert/bert-base-uncased",
-                    trust_remote_code=True,
-                    local_files_only=True,
-                    config=self.bert_config,
-                )
-            except OSError:  # downloads model from HF is not already done
-                print("Local model files not found. Attempting to download...")
-                self.llm_model = BertModel.from_pretrained(
-                    "google-bert/bert-base-uncased",
-                    trust_remote_code=True,
-                    local_files_only=False,
-                    config=self.bert_config,
-                )
-
-            try:
-                self.tokenizer = BertTokenizer.from_pretrained(
-                    "google-bert/bert-base-uncased",
-                    trust_remote_code=True,
-                    local_files_only=True,
-                )
-            except OSError:  # downloads the tokenizer from HF if not already done
-                print("Local tokenizer files not found. Atempting to download them..")
-                self.tokenizer = BertTokenizer.from_pretrained(
-                    "google-bert/bert-base-uncased",
-                    trust_remote_code=True,
-                    local_files_only=False,
-                )
+            self.llm_model = BertModel.from_pretrained(
+                "google-bert/bert-base-uncased",
+                trust_remote_code=True,
+                local_files_only=False,
+                config=self.bert_config,
+            )
+            self.tokenizer = BertTokenizer.from_pretrained(
+                "google-bert/bert-base-uncased",
+                trust_remote_code=True,
+                local_files_only=False,
+            )
         else:
-            raise Exception("LLM model is not defined")
+            model_not_defined_err = "LLM model is not defined"
+            raise ValueError(model_not_defined_err)
 
         if self.tokenizer.eos_token:
             self.tokenizer.pad_token = self.tokenizer.eos_token
@@ -181,7 +129,11 @@ class Model(nn.Module):
         if configs.prompt_domain:
             self.description = configs.content
         else:
-            self.description = "The Electricity Transformer Temperature (ETT) is a crucial indicator in the electric power long-term deployment."
+            self.description = (
+                "The Electricity Transformer Temperature (ETT) "
+                "is a crucial indicator in the electric power "
+                "long-term deployment."
+            )
 
         self.dropout = nn.Dropout(configs.dropout)
 
@@ -191,9 +143,8 @@ class Model(nn.Module):
 
         self.word_embeddings = self.llm_model.get_input_embeddings().weight
         self.vocab_size = self.word_embeddings.shape[0]
-        if self.task_name == "long_term_forecast":
-            self.num_tokens = 1000
-        elif self.task_name == "short_term_forecast":
+        self.num_tokens = 1000
+        if self.task_name == "short_term_forecast":
             self.num_tokens = 100
         self.mapping_layer = nn.Linear(self.vocab_size, self.num_tokens)
 
@@ -204,10 +155,7 @@ class Model(nn.Module):
         self.patch_nums = int((configs.seq_len - self.patch_len) / self.stride + 2)
         self.head_nf = self.d_ff * self.patch_nums
 
-        if (
-            self.task_name == "long_term_forecast"
-            or self.task_name == "short_term_forecast"
-        ):
+        if self.task_name in ["long_term_forecast", "short_term_forecast"]:
             self.output_projection = FlattenHead(
                 configs.enc_in,
                 self.head_nf,
