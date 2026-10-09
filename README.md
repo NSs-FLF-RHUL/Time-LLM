@@ -209,3 +209,14 @@ As one of the earliest works exploring the intersection of large language models
 ## Acknowledgement
 
 Our implementation adapts [Time-Series-Library](https://github.com/thuml/Time-Series-Library) and [OFA (GPT4TS)](https://github.com/DAMO-DI-ML/NeurIPS2023-One-Fits-All) as the code base and have extensively modified it to our purposes. We thank the authors for sharing their implementations and related resources.
+
+## Legal Disclaimer
+
+> [!IMPORTANT]
+> [This content was moved to the README from `LEGAL.md`](https://github.com/KimMeen/Time-LLM/blob/main/LEGAL.md).
+
+Within this source code, the comments in Chinese shall be the original, governing version. Any comment in other languages are for reference only. In the event of any conflict between the Chinese language version comments and other language version comments, the Chinese language version shall prevail.
+
+法律免责声明
+
+关于代码注释部分，中文注释为官方版本，其它语言注释仅做参考。中文注释可能与其它语言注释存在不一致，当中文注释与其它语言注释存在不一致时，请以中文注释为准。
