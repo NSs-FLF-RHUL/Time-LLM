@@ -59,6 +59,8 @@ fix = true
 force-exclude = true
 lint.ignore = [
   "COM812", # trailing commas (ruff-format recommended)
+  "CPY001", # copyright notice in Python files
+  "D104",   # docstring in public (sub)module
   "D203",   # no-blank-line-before-class
   "D212",   # multi-line-summary-first-line
   "D407",   # removed dashes lines under sections
