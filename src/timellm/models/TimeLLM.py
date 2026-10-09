@@ -329,17 +329,20 @@ class ReprogrammingLayer(nn.Module):
 
         return self.out_projection(out)
 
-    def reprogramming(self, target_embedding, source_embedding, value_embedding):
-        B, L, H, E = target_embedding.shape
-
-        scale = 1.0 / sqrt(E)
+    def reprogramming(
+        self,
+        target_embedding: torch.Tensor,
+        source_embedding: torch.Tensor,
+        value_embedding: torch.Tensor,
+    ) -> torch.Tensor:
+        """Reprogramming."""
+        scale = 1.0 / sqrt(target_embedding.shape[-1])
 
         scores = torch.einsum("blhe,she->bhls", target_embedding, source_embedding)
 
         attn = torch.softmax(scale * scores, dim=-1)
         self.attn_mean = attn.mean(dim=0).mean(dim=0).detach().cpu().numpy()
 
-        A = self.dropout(attn)
-        reprogramming_embedding = torch.einsum("bhls,she->blhe", A, value_embedding)
+        attn_dropout = self.dropout(attn)
 
-        return reprogramming_embedding
+        return torch.einsum("bhls,she->blhe", attn_dropout, value_embedding)
