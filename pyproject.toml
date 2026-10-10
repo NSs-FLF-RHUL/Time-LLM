@@ -67,6 +67,7 @@ lint.ignore = [
   "D417",   # argument description in docstring (unreliable)
   "ISC001", # simplify implicit str concatenation (ruff-format recommended)
   "PLR2004", # magic values
+  "S105", # possible hardcoded password (JB)
 ]
 lint.per-file-ignores = { "tests*" = [
   "ANN001", # Missing type annotation for argument
