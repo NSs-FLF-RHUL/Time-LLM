@@ -1,26 +1,32 @@
-from timellm.data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_M4
-from timellm.utils.tools import seed_worker
 import torch
 
+from timellm.data_provider.data_loader import (
+    Dataset_Custom,
+    Dataset_ETT_hour,
+    Dataset_ETT_minute,
+    Dataset_M4,
+)
+from timellm.utils.tools import seed_worker
+
 data_dict = {
-    'ETTh1': Dataset_ETT_hour,
-    'ETTh2': Dataset_ETT_hour,
-    'ETTm1': Dataset_ETT_minute,
-    'ETTm2': Dataset_ETT_minute,
-    'ECL': Dataset_Custom,
-    'Traffic': Dataset_Custom,
-    'Weather': Dataset_Custom,
-    'm4': Dataset_M4,
-    'Pulsar': Dataset_Custom,
+    "ETTh1": Dataset_ETT_hour,
+    "ETTh2": Dataset_ETT_hour,
+    "ETTm1": Dataset_ETT_minute,
+    "ETTm2": Dataset_ETT_minute,
+    "ECL": Dataset_Custom,
+    "Traffic": Dataset_Custom,
+    "Weather": Dataset_Custom,
+    "m4": Dataset_M4,
+    "Pulsar": Dataset_Custom,
 }
 
 
-def data_provider(args, flag, seed = None):
+def data_provider(args, flag, seed=None):
     Data = data_dict[args.data]
-    timeenc = 0 if args.embed != 'timeF' else 1
+    timeenc = 0 if args.embed != "timeF" else 1
     percent = args.percent
 
-    if flag == 'test':
+    if flag == "test":
         shuffle_flag = False
         drop_last = True
         batch_size = args.batch_size
@@ -31,7 +37,7 @@ def data_provider(args, flag, seed = None):
         batch_size = args.batch_size
         freq = args.freq
 
-    if args.data == 'm4':
+    if args.data == "m4":
         drop_last = False
         data_set = Data(
             root_path=args.root_path,
@@ -42,7 +48,7 @@ def data_provider(args, flag, seed = None):
             target=args.target,
             timeenc=timeenc,
             freq=freq,
-            seasonal_patterns=args.seasonal_patterns
+            seasonal_patterns=args.seasonal_patterns,
         )
     else:
         data_set = Data(
@@ -72,6 +78,6 @@ def data_provider(args, flag, seed = None):
         num_workers=args.num_workers,
         drop_last=drop_last,
         worker_init_fn=wif,
-        generator=g
+        generator=g,
     )
     return data_set, data_loader

@@ -1,5 +1,3 @@
-from typing import List
-
 import numpy as np
 import pandas as pd
 from pandas.tseries import offsets
@@ -22,7 +20,7 @@ class SecondOfMinute(TimeFeature):
 
     def __call__(self, index: pd.DatetimeIndex) -> np.ndarray:
         return index.second / 59.0 - 0.5
-        
+
     def reverse(self, t: np.ndarray) -> np.ndarray:
         return (t + 0.5) * 59.0
 
@@ -32,7 +30,7 @@ class MinuteOfHour(TimeFeature):
 
     def __call__(self, index: pd.DatetimeIndex) -> np.ndarray:
         return index.minute / 59.0 - 0.5
-        
+
     def reverse(self, t: np.ndarray) -> np.ndarray:
         return (t + 0.5) * 59.0
 
@@ -42,7 +40,7 @@ class HourOfDay(TimeFeature):
 
     def __call__(self, index: pd.DatetimeIndex) -> np.ndarray:
         return index.hour / 23.0 - 0.5
-        
+
     def reverse(self, t: np.ndarray) -> np.ndarray:
         return (t + 0.5) * 23.0
 
@@ -66,7 +64,7 @@ class DayOfYear(TimeFeature):
 
     def __call__(self, index: pd.DatetimeIndex) -> np.ndarray:
         return (index.dayofyear - 1) / 365.0 - 0.5
-        
+
     def reverse(self, t: np.ndarray) -> np.ndarray:
         return (t + 0.5) * 365.0 + 1
 
@@ -85,15 +83,16 @@ class WeekOfYear(TimeFeature):
         return (index.isocalendar().week - 1) / 52.0 - 0.5
 
 
-def time_features_from_frequency_str(freq_str: str) -> List[TimeFeature]:
+def time_features_from_frequency_str(freq_str: str) -> list[TimeFeature]:
     """
     Returns a list of time features that will be appropriate for the given frequency string.
+
     Parameters
     ----------
     freq_str
         Frequency string of the form [multiple][granularity] such as "12H", "5min", "1D" etc.
-    """
 
+    """
     features_by_offsets = {
         offsets.YearEnd: [],
         offsets.QuarterEnd: [MonthOfYear],
@@ -140,5 +139,5 @@ def time_features_from_frequency_str(freq_str: str) -> List[TimeFeature]:
     raise RuntimeError(supported_freq_msg)
 
 
-def time_features(dates, freq='h'):
+def time_features(dates, freq="h"):
     return np.vstack([feat(dates) for feat in time_features_from_frequency_str(freq)])
