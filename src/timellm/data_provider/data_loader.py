@@ -147,21 +147,30 @@ class Dataset_ETT_hour(Dataset):
 
 
 class Dataset_ETT_minute(Dataset):
+    """ETT minutly dataset."""
+
     def __init__(
         self,
-        root_path,
-        flag="train",
-        size=None,
-        features="S",
-        data_path="ETTm1.csv",
-        target="OT",
-        scale=True,
-        timeenc=0,
-        freq="t",
-        percent=100,
-        seasonal_patterns=None,
-    ):
-        if size == None:
+        root_path: str | Path,
+        flag: str = "train",
+        size: list | np.ndarray | None = None,
+        features: str = "S",
+        data_path: str = "ETTm1.csv",
+        target: str = "OT",
+        timeenc: int = 0,
+        freq: str = "t",
+        percent: float = 100,
+        *,
+        scale: bool = True,
+    ) -> None:
+        """Initialize ETTm dataset."""
+        if flag not in ["train", "test", "val"]:
+            invalid_flag_err_msg = f"Invalid flag: {flag}."
+            raise ValueError(invalid_flag_err_msg)
+        type_map = {"train": 0, "val": 1, "test": 2}
+        self.set_type = type_map[flag]
+
+        if size is None:
             self.seq_len = 24 * 4 * 4
             self.label_len = 24 * 4
             self.pred_len = 24 * 4
@@ -169,10 +178,6 @@ class Dataset_ETT_minute(Dataset):
             self.seq_len = size[0]
             self.label_len = size[1]
             self.pred_len = size[2]
-        # init
-        assert flag in ["train", "test", "val"]
-        type_map = {"train": 0, "val": 1, "test": 2}
-        self.set_type = type_map[flag]
 
         self.percent = percent
         self.features = features
@@ -188,9 +193,10 @@ class Dataset_ETT_minute(Dataset):
         self.enc_in = self.data_x.shape[-1]
         self.tot_len = len(self.data_x) - self.seq_len - self.pred_len + 1
 
-    def __read_data__(self):
+    def __read_data__(self) -> None:
+        """Read ETTm data."""
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path, self.data_path))
+        df_raw = pd.read_csv(Path(self.root_path) / self.data_path)
 
         border1s = [
             0,
@@ -207,9 +213,9 @@ class Dataset_ETT_minute(Dataset):
         border2 = border2s[self.set_type]
 
         if self.set_type == 0:
-            border2 = (border2 - self.seq_len) * self.percent // 100 + self.seq_len
+            border2 = int((border2 - self.seq_len) * self.percent // 100 + self.seq_len)
 
-        if self.features == "M" or self.features == "MS":
+        if self.features in ["M", "MS"]:
             cols_data = df_raw.columns[1:]
             df_data = df_raw[cols_data]
         elif self.features == "S":
@@ -220,7 +226,7 @@ class Dataset_ETT_minute(Dataset):
             self.scaler.fit(train_data.values)
             data = self.scaler.transform(df_data.values)
         else:
-            data = df_data.values
+            data = df_data.to_numpy()
 
         df_stamp = df_raw[["date"]][border1:border2]
         df_stamp["date"] = pd.to_datetime(df_stamp.date)
@@ -231,7 +237,7 @@ class Dataset_ETT_minute(Dataset):
             df_stamp["hour"] = df_stamp.date.apply(lambda row: row.hour, 1)
             df_stamp["minute"] = df_stamp.date.apply(lambda row: row.minute, 1)
             df_stamp["minute"] = df_stamp.minute.map(lambda x: x // 15)
-            data_stamp = df_stamp.drop(["date"], 1).values
+            data_stamp = df_stamp.drop(["date"], 1).to_numpy()
         elif self.timeenc == 1:
             data_stamp = time_features(
                 pd.to_datetime(df_stamp["date"].values), freq=self.freq
@@ -242,7 +248,12 @@ class Dataset_ETT_minute(Dataset):
         self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> tuple:
+        """
+        Get ETTm dataset item.
+
+        :param index: item index.
+        """
         feat_id = index // self.tot_len
         s_begin = index % self.tot_len
 
@@ -256,10 +267,16 @@ class Dataset_ETT_minute(Dataset):
 
         return seq_x, seq_y, seq_x_mark, seq_y_mark
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """Compute ETTm dataset length."""
         return (len(self.data_x) - self.seq_len - self.pred_len + 1) * self.enc_in
 
-    def inverse_transform(self, data):
+    def inverse_transform(self, data: np.ndarray | pd.DataFrame) -> np.ndarray:
+        """
+        Denormalize data.
+
+        :param data: ETTm data to denormalize.
+        """
         return self.scaler.inverse_transform(data)
 
 
