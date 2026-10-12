@@ -1,3 +1,7 @@
+"""Prepare datasets for neural networks."""
+
+from argparse import Namespace
+
 import torch
 
 from timellm.data_provider.data_loader import (
@@ -21,8 +25,18 @@ data_dict = {
 }
 
 
-def data_provider(args, flag, seed=None):
-    Data = data_dict[args.data]
+def data_provider(
+    args: Namespace, flag: "str", seed: int | None = None
+) -> tuple[torch.utils.data.Dataset, torch.utils.data.DataLoader]:
+    """
+    Create dataset and dataloader.
+
+    :param args: run configuration.
+    :param flag: data type (train, test, etc).
+    :param seed: seed for random number generator.
+    :return: PyTorch dataset and dataloader.
+    """
+    data = data_dict[args.data]
     timeenc = 0 if args.embed != "timeF" else 1
     percent = args.percent
 
@@ -39,7 +53,7 @@ def data_provider(args, flag, seed=None):
 
     if args.data == "m4":
         drop_last = False
-        data_set = Data(
+        data_set = data(
             root_path=args.root_path,
             data_path=args.data_path,
             flag=flag,
@@ -51,7 +65,7 @@ def data_provider(args, flag, seed=None):
             seasonal_patterns=args.seasonal_patterns,
         )
     else:
-        data_set = Data(
+        data_set = data(
             root_path=args.root_path,
             data_path=args.data_path,
             flag=flag,
