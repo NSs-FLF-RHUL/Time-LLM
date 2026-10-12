@@ -1,3 +1,5 @@
+# ruff: noqa: N801
+
 """Datasets in timellm's format."""
 
 import warnings
