@@ -412,20 +412,22 @@ class Dataset_Custom(Dataset):
 
 
 class Dataset_M4(Dataset):
+    """M4 dataset."""
+
     def __init__(
         self,
-        root_path,
-        flag="pred",
-        size=None,
-        features="S",
-        data_path="ETTh1.csv",
-        target="OT",
-        scale=False,
-        inverse=False,
-        timeenc=0,
-        freq="15min",
-        seasonal_patterns="Yearly",
-    ):
+        root_path: str | Path,
+        size: list | np.ndarray,
+        flag: str = "pred",
+        features: str = "S",
+        target: str = "OT",
+        timeenc: int = 0,
+        seasonal_patterns: str = "Yearly",
+        *,
+        scale: bool = False,
+        inverse: bool = False,
+    ) -> None:
+        """Initialize M4 dataset."""
         self.features = features
         self.target = target
         self.scale = scale
@@ -444,8 +446,8 @@ class Dataset_M4(Dataset):
 
         self.__read_data__()
 
-    def __read_data__(self):
-        # M4Dataset.initialize()
+    def __read_data__(self) -> None:
+        """Read M4 data."""
         if self.flag == "train":
             dataset = M4Dataset.load(training=True, dataset_file=self.root_path)
         else:
@@ -453,22 +455,25 @@ class Dataset_M4(Dataset):
         training_values = np.array(
             [
                 v[~np.isnan(v)]
-                for v in dataset.values[dataset.groups == self.seasonal_patterns]
+                for v in dataset.vals[dataset.groups == self.seasonal_patterns]
             ]
         )  # split different frequencies
-        self.ids = np.array(
-            [i for i in dataset.ids[dataset.groups == self.seasonal_patterns]]
-        )
-        self.timeseries = [ts for ts in training_values]
+        self.ids = np.array(dataset.ids[dataset.groups == self.seasonal_patterns])
+        self.timeseries = list(training_values)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> tuple:
+        """
+        Get M4 dataset item.
+
+        :param index: item index.
+        """
         insample = np.zeros((self.seq_len, 1))
         insample_mask = np.zeros((self.seq_len, 1))
         outsample = np.zeros((self.pred_len + self.label_len, 1))
         outsample_mask = np.zeros((self.pred_len + self.label_len, 1))  # m4 dataset
 
         sampled_timeseries = self.timeseries[index]
-        cut_point = np.random.randint(
+        cut_point = np.random.default_rng().integers(
             low=max(1, len(sampled_timeseries) - self.window_sampling_limit),
             high=len(sampled_timeseries),
             size=1,
@@ -488,18 +493,19 @@ class Dataset_M4(Dataset):
         outsample_mask[: len(outsample_window), 0] = 1.0
         return insample, outsample, insample_mask, outsample_mask
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """Compute M4 dataset length."""
         return len(self.timeseries)
 
-    def inverse_transform(self, data):
-        return self.scaler.inverse_transform(data)
-
-    def last_insample_window(self):
+    def last_insample_window(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        The last window of insample size of all timeseries.
-        This function does not support batching and does not reshuffle timeseries.
+        Return last window of insample size of all timeseries.
 
-        :return: Last insample window of all timeseries. Shape "timeseries, insample size"
+        This function does not support batching and does not
+        reshuffle timeseries.
+
+        :return: Last insample window of all timeseries.
+        Shape "timeseries, insample size"
         """
         insample = np.zeros((len(self.timeseries), self.seq_len))
         insample_mask = np.zeros((len(self.timeseries), self.seq_len))
