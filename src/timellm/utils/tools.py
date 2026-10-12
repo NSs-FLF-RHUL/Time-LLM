@@ -1,6 +1,9 @@
+"""Utility functions for timellm."""
+
 import random
 import shutil
 from argparse import Namespace
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -14,13 +17,15 @@ plt.switch_backend("agg")
 
 
 def adjust_learning_rate(
-    accelerator: Accelerator | None = None,
-    optimizer: torch.optim.Optimizer | None = None,
-    scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
-    epoch: int | None = None,
-    args: Namespace | None = None,
+    accelerator: Accelerator,
+    optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler.LRScheduler,
+    epoch: int,
+    args: Namespace,
+    *,
     printout: bool = True,
 ) -> None:
+    """Adjust learning rate."""
     lr_adjust = {}
     if args.lradj == "type1":
         lr_adjust = {epoch: args.learning_rate * (0.5 ** ((epoch - 1) // 1))}
@@ -39,31 +44,36 @@ def adjust_learning_rate(
     elif args.lradj == "constant":
         lr_adjust = {epoch: args.learning_rate}
 
-    if epoch in lr_adjust.keys():
+    if epoch in lr_adjust:
         lr = lr_adjust[epoch]
         for param_group in optimizer.param_groups:
             param_group["lr"] = lr
-        if printout:
-            if accelerator is not None:
-                accelerator.print(f"Updating learning rate to {lr}")
-            else:
-                print(f"Updating learning rate to {lr}")
+        if printout and accelerator is not None:
+            accelerator.print(f"Updating learning rate to {lr}")
 
 
 class EarlyStopping:
+    """Early stopping object."""
+
     def __init__(
-        self, accelerator=None, patience=7, verbose=False, delta=0, save_mode=True
-    ):
+        self,
+        accelerator: Accelerator,
+        patience: int = 7,
+        delta: float = 0,
+        *,
+        verbose: bool = False,
+        save_mode: bool = True,
+    ) -> None:
         """
         Identify when to save training progress, and save it when conditions are met.
 
-        Stop training if the loss has not been improving for a number of epochs defined by patience, and
-        save progress when there is improvement if requested. An improvement means the loss has improved,
-        i.e, decreased by at least delta.
+        Stop training if the loss has not been improving for a number of epochs defined
+        by patience, and save progress when there is improvement if requested. An
+        improvement means the loss has improved, i.e, decreased by at least delta.
 
         :param accelerator: accelerator
-        :param patience: number of epochs to wait for improvement before stopping training
-        :param verbose: whether to print number of epochs without improvement and saving notice.
+        :param patience: number of epochs to wait for improvement before stopping.
+        :param verbose: whether to print stuff.
         :param delta: minimal acceptable improvement of the loss function.
         :param save_mode: whether to save checkpoints or not.
         """
@@ -71,7 +81,7 @@ class EarlyStopping:
         self.patience = patience
         self.verbose = verbose
         self.counter = 0
-        self.best_score = None
+        self.best_score = -np.inf
         self.early_stop = False
         self.val_loss_min = np.inf
         self.delta = delta
@@ -84,14 +94,15 @@ class EarlyStopping:
         path: Path | str,
         optimizer: torch.optim.Optimizer | None = None,
         scheduler: torch.optim.lr_scheduler.LRScheduler | None = None,
-    ):
+    ) -> None:
         """
         Compare current score with best score and update early stopping counter.
 
-        The score is defined as the opposite of the loss. We want to minimize the losse function, hence,
-        we want to maximize the loss. If the best score is not defined yet, we are likely just done with
-        the first epoch; this will be our first checkpoint. If the score has not significantly improved,
-        we increase the early stopping counter. Otherwise, we update the best loss to the current loss
+        The score is defined as the opposite of the loss. We want to minimize the loss
+        function, hence, we want to maximize the loss. If the best score is not
+        defined yet, we are likely just done with the first epoch; this will be our
+        first checkpoint. If the score has not significantly improved, we increase the
+        early stopping counter. Otherwise, we update the best loss to the current loss
         and save another checkpoint.
 
         :param val_loss: current validation loss
@@ -101,15 +112,13 @@ class EarlyStopping:
         :param scheduler: learning rate scheduler, optional
         """
         score = -val_loss
-        if self.best_score is None:
+        if self.best_score == -np.inf:
             self.best_score = score
             if self.save_mode:
                 self.save_checkpoint(val_loss, model, path, optimizer, scheduler)
         elif score < self.best_score + self.delta:
             self.counter += 1
-            if self.accelerator is None:
-                print(f"EarlyStopping counter: {self.counter} out of {self.patience}")
-            else:
+            if self.accelerator is not None:
                 self.accelerator.print(
                     f"EarlyStopping counter: {self.counter} out of {self.patience}"
                 )
@@ -148,8 +157,6 @@ class EarlyStopping:
             )
             if self.accelerator is not None:
                 self.accelerator.print(save_msg)
-            else:
-                print(save_msg)
 
         if self.accelerator is not None:
             model = self.accelerator.unwrap_model(model)
@@ -180,18 +187,17 @@ def create_checkpoint_dict(
     and, optionally, the state of the optimizer and of the learning rate scheduler.
     To be used with save_checkpoint of class EarlyStopping.
     """
-    checkpoint = {
+    return {
         "model": model.state_dict(),
         "loss": loss,
         "epoch": epoch,
         "optimizer": optimizer.state_dict() if optimizer is not None else None,
         "scheduler": scheduler.state_dict() if scheduler is not None else None,
     }
-    return checkpoint
 
 
-class dotdict(dict):
-    """dot.notation access to dictionary attributes"""
+class dotdict(dict):  # noqa: N801
+    """dot.notation access to dictionary attributes."""
 
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
@@ -199,18 +205,32 @@ class dotdict(dict):
 
 
 class StandardScaler:
-    def __init__(self, mean, std):
+    """
+    Define standard scalre.
+
+    After standard scaling, data have a mean of 0 and a standard deviation of 1.
+    """
+
+    def __init__(self, mean: float, std: float) -> None:
+        """
+        Initialize standard scaler.
+
+        :param mean: mean of the dataset
+        :param std: standard deviation of the dataset
+        """
         self.mean = mean
         self.std = std
 
-    def transform(self, data):
+    def transform(self, data: np.ndarray) -> np.ndarray:
+        """Normalize data."""
         return (data - self.mean) / self.std
 
-    def inverse_transform(self, data):
+    def inverse_transform(self, data: np.ndarray) -> np.ndarray:
+        """Denormalize data."""
         return (data * self.std) + self.mean
 
 
-def adjustment(gt, pred):
+def adjustment(gt: list | np.ndarray, pred: list | np.ndarray) -> tuple:  # noqa: D103
     anomaly_state = False
     for i in range(len(gt)):
         if gt[i] == 1 and pred[i] == 1 and not anomaly_state:
@@ -232,27 +252,36 @@ def adjustment(gt, pred):
     return gt, pred
 
 
-def cal_accuracy(y_pred, y_true):
-    return np.mean(y_pred == y_true)
+def cal_accuracy(y_pred: np.ndarray, y_true: np.ndarray) -> float:
+    """Calculate accuracy."""
+    return float(np.mean(y_pred == y_true))
 
 
-def del_files(dir_path):
+def del_files(dir_path: str) -> None:
+    """Delete files."""
     shutil.rmtree(dir_path)
 
 
-def vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric):
+def vali(
+    args: Namespace,
+    accelerator: Accelerator,
+    model: torch.nn.Module,
+    vali_data: torch.utils.data.Dataset,  # noqa: ARG001
+    vali_loader: torch.utils.data.DataLoader,
+    criterion: Callable,
+    mae_metric: Callable,
+) -> tuple[float, float]:
+    """Run validation session."""
     total_loss = []
     total_mae_loss = []
     model.eval()
     with torch.no_grad():
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(
-            enumerate(vali_loader)
-        ):
-            batch_x = batch_x.float().to(accelerator.device)
-            batch_y = batch_y.float()
+        for _, (bx, by, bxm, bym) in tqdm(enumerate(vali_loader)):
+            batch_x = bx.float().to(accelerator.device)
+            batch_y = by.float()
 
-            batch_x_mark = batch_x_mark.float().to(accelerator.device)
-            batch_y_mark = batch_y_mark.float().to(accelerator.device)
+            batch_x_mark = bxm.float().to(accelerator.device)
+            batch_y_mark = bym.float().to(accelerator.device)
 
             # decoder input
             dec_inp = torch.zeros_like(batch_y[:, -args.pred_len :, :]).float()
@@ -296,20 +325,27 @@ def vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric
     return total_loss, total_mae_loss
 
 
-def vali_pulsar(args, accelerator, model, discr, vali_data, vali_loader, criterion):
+def vali_pulsar(
+    args: Namespace,
+    accelerator: Accelerator,
+    model: torch.nn.Module,
+    discr: torch.nn.Module,
+    vali_data: torch.utils.data.Dataset,  # noqa: ARG001
+    vali_loader: torch.utils.data.DataLoader,
+    criterion: Callable,
+) -> tuple:
+    """Run validation session for pulsar dataset."""
     total_loss = []
     total_loss_d = []
     model.eval()
     discr.eval()
     with torch.no_grad():
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(
-            enumerate(vali_loader)
-        ):
-            batch_x = batch_x.float().to(accelerator.device)
-            batch_y = batch_y.float()
+        for _, (bx, by, bxm, bym) in tqdm(enumerate(vali_loader)):
+            batch_x = bx.float().to(accelerator.device)
+            batch_y = by.float()
 
-            batch_x_mark = batch_x_mark.float().to(accelerator.device)
-            batch_y_mark = batch_y_mark.float().to(accelerator.device)
+            batch_x_mark = bxm.float().to(accelerator.device)
+            batch_y_mark = bym.float().to(accelerator.device)
 
             # decoder input
             dec_inp = torch.zeros_like(batch_y[:, -args.pred_len :, :]).float()
@@ -358,7 +394,15 @@ def vali_pulsar(args, accelerator, model, discr, vali_data, vali_loader, criteri
     )
 
 
-def test(args, accelerator, model, train_loader, vali_loader, criterion):
+def test(
+    args: Namespace,
+    accelerator: Accelerator,
+    model: torch.nn.Module,
+    train_loader: torch.utils.data.DataLoader,
+    vali_loader: torch.utils.data.DataLoader,
+    criterion: Callable,
+) -> torch.Tensor | np.ndarray | float:
+    """Run test session."""
     x, _ = train_loader.dataset.last_insample_window()
     y = vali_loader.dataset.timeseries
     x = torch.tensor(x, dtype=torch.float32).to(accelerator.device)
@@ -366,12 +410,16 @@ def test(args, accelerator, model, train_loader, vali_loader, criterion):
 
     model.eval()
     with torch.no_grad():
-        B, _, C = x.shape
-        dec_inp = torch.zeros((B, args.pred_len, C)).float().to(accelerator.device)
+        nbatch, _, nchan = x.shape
+        dec_inp = (
+            torch.zeros((nbatch, args.pred_len, nchan)).float().to(accelerator.device)
+        )
         dec_inp = torch.cat([x[:, -args.label_len :, :], dec_inp], dim=1)
-        outputs = torch.zeros((B, args.pred_len, C)).float().to(accelerator.device)
-        id_list = np.arange(0, B, args.eval_batch_size)
-        id_list = np.append(id_list, B)
+        outputs = (
+            torch.zeros((nbatch, args.pred_len, nchan)).float().to(accelerator.device)
+        )
+        id_list = np.arange(0, nbatch, args.eval_batch_size)
+        id_list = np.append(id_list, nbatch)
         for i in range(len(id_list) - 1):
             outputs[id_list[i] : id_list[i + 1], :, :] = model(
                 x[id_list[i] : id_list[i + 1]],
@@ -397,7 +445,7 @@ def test(args, accelerator, model, train_loader, vali_loader, criterion):
     return loss
 
 
-def load_content(args: Namespace, *, prompt_bank: Path | None = None):
+def load_content(args: Namespace, *, prompt_bank: Path | None = None) -> str:
     """
     Load the content of a prompt file.
 
@@ -418,10 +466,7 @@ def load_content(args: Namespace, *, prompt_bank: Path | None = None):
 
     """
     # Ensures compatibilty with orginal Time-LLM
-    if "ETT" in args.data:
-        file = "ETT"
-    else:
-        file = args.data
+    file = "ETT" if "ETT" in args.data else args.data
     file = Path(file)
     if not file.suffix:
         file = file.with_suffix(".txt")
@@ -437,13 +482,16 @@ def load_content(args: Namespace, *, prompt_bank: Path | None = None):
     elif (prompt_bank / file).exists():
         file_location = prompt_bank / file
     else:
-        raise OSError(f"{file} not found")
+        file_err_msg = f"{file} not found"
+        raise OSError(file_err_msg)
 
     with file_location.open("r") as f:
         return f.read()
 
 
-def seed_worker(worker_id):
-    worker_seed = torch.initial_seed() % 2**32
-    np.random.seed(worker_seed)
-    random.seed(worker_seed)
+def seed_worker(worker_id: int) -> None:
+    """Seed workers for datasets."""
+    if worker_id:
+        worker_seed = torch.initial_seed() % 2**32
+        np.random.seed(worker_seed)  # noqa: NPY002
+        random.seed(worker_seed)
