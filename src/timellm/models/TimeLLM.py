@@ -1,3 +1,7 @@
+# ruff: noqa: N999
+
+"""Define TimeLLM's model."""
+
 from argparse import Namespace
 from math import sqrt
 
@@ -43,7 +47,9 @@ class FlattenHead(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, configs: Namespace) -> None:
+    """TimeLLM main model."""
+
+    def __init__(self, configs: Namespace) -> None:  # noqa: PLR0915
         """Initialize timellm model."""
         super().__init__()
         self.task_name = configs.task_name
@@ -167,11 +173,16 @@ class Model(nn.Module):
 
         self.normalize_layers = Normalize(configs.enc_in, affine=False)
 
-    def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
-        if (
-            self.task_name == "long_term_forecast"
-            or self.task_name == "short_term_forecast"
-        ):
+    def forward(
+        self,
+        x_enc: torch.Tensor,
+        x_mark_enc: torch.Tensor,  # noqa: ARG002
+        x_dec: torch.Tensor,  # noqa: ARG002
+        x_mark_dec: torch.Tensor,  # noqa: ARG002
+        mask: torch.Tensor | None = None,  # noqa: ARG002
+    ) -> torch.Tensor | None:
+        """Forward pass."""
+        if self.task_name in ["long_term_forecast", "short_term_forecast"]:
             dec_out = self.forecast(x_enc)
             return dec_out[:, -self.pred_len :, :]
         return None
