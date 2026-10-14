@@ -1,5 +1,7 @@
 """Time features for time series."""
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 from pandas import DatetimeIndex
@@ -111,7 +113,7 @@ def time_features_from_frequency_str(freq_str: str) -> list[TimeFeature]:
         such as "12H", "5min", "1D" etc.
 
     """
-    features_by_offsets = {
+    features_by_offsets: dict[Any, list[type[TimeFeature]]] = {
         offsets.YearEnd: [],
         offsets.QuarterEnd: [MonthOfYear],
         offsets.MonthEnd: [MonthOfYear],
