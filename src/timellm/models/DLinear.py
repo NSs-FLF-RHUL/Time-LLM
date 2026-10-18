@@ -1,5 +1,9 @@
+# ruff: noqa: N999, D100, D102
+
+from argparse import Namespace
+
 import torch
-import torch.nn.functional as F
+import torch.nn.functional as func
 from torch import nn
 
 from timellm.layers.Autoformer_EncDec import series_decomp
@@ -7,21 +11,21 @@ from timellm.layers.Autoformer_EncDec import series_decomp
 
 class Model(nn.Module):
     """
+    D4Linear model.
+
     Paper link: https://arxiv.org/pdf/2205.13504.pdf
     """
 
-    def __init__(self, configs, individual=False):
+    def __init__(self, configs: Namespace, *, individual: bool = False) -> None:
         """
-        individual: Bool, whether shared model among different variates.
+        Initialize model.
+
+        :param individual: Bool, whether shared model among different variates.
         """
-        super(Model, self).__init__()
+        super().__init__()
         self.task_name = configs.task_name
         self.seq_len = configs.seq_len
-        if (
-            self.task_name == "classification"
-            or self.task_name == "anomaly_detection"
-            or self.task_name == "imputation"
-        ):
+        if self.task_name in ["classification", "anomaly_detection", "imputation"]:
             self.pred_len = configs.seq_len
         else:
             self.pred_len = configs.pred_len
@@ -56,13 +60,13 @@ class Model(nn.Module):
             )
 
         if self.task_name == "classification":
-            self.act = F.gelu
+            self.act = func.gelu
             self.dropout = nn.Dropout(configs.dropout)
             self.projection = nn.Linear(
                 configs.enc_in * configs.seq_len, configs.num_class
             )
 
-    def encoder(self, x):
+    def encoder(self, x: torch.Tensor) -> torch.Tensor:
         seasonal_init, trend_init = self.decompsition(x)
         seasonal_init, trend_init = (
             seasonal_init.permute(0, 2, 1),
@@ -88,37 +92,41 @@ class Model(nn.Module):
         x = seasonal_output + trend_output
         return x.permute(0, 2, 1)
 
-    def forecast(self, x_enc):
+    def forecast(self, x_enc: torch.Tensor) -> torch.Tensor:
         return self.encoder(x_enc)
 
-    def imputation(self, x_enc):
+    def imputation(self, x_enc: torch.Tensor) -> torch.Tensor:
         return self.encoder(x_enc)
 
-    def anomaly_detection(self, x_enc):
+    def anomaly_detection(self, x_enc: torch.Tensor) -> torch.Tensor:
         return self.encoder(x_enc)
 
-    def classification(self, x_enc):
+    def classification(self, x_enc: torch.Tensor) -> torch.Tensor:
         enc_out = self.encoder(x_enc)
-        # Output
-        # (batch_size, seq_length * d_model)
-        output = enc_out.reshape(enc_out.shape[0], -1)
-        output = self.projection(output)  # (batch_size, num_classes)
-        return output
+        output = enc_out.reshape(
+            enc_out.shape[0], -1
+        )  # (batch_size, seq_length * d_model)
+        return self.projection(output)  # (batch_size, num_classes)
 
-    def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
-        if (
-            self.task_name == "long_term_forecast"
-            or self.task_name == "short_term_forecast"
-        ):
+    def forward(
+        self,
+        x_enc: torch.Tensor,
+        x_mark_enc: torch.Tensor,  # noqa: ARG002
+        x_dec: torch.Tensor,  # noqa: ARG002
+        x_mark_dec: torch.Tensor,  # noqa: ARG002
+        mask: torch.Tensor | None = None,  # noqa: ARG002
+    ) -> torch.Tensor | None:
+        """Forward pass."""
+        if self.task_name in [
+            "long_term_forecast",
+            self.task_name == "short_term_forecast",
+        ]:
             dec_out = self.forecast(x_enc)
             return dec_out[:, -self.pred_len :, :]  # [B, L, D]
         if self.task_name == "imputation":
-            dec_out = self.imputation(x_enc)
-            return dec_out  # [B, L, D]
+            return self.imputation(x_enc)  # [B, L, D]
         if self.task_name == "anomaly_detection":
-            dec_out = self.anomaly_detection(x_enc)
-            return dec_out  # [B, L, D]
+            return self.anomaly_detection(x_enc)  # [B, L, D]
         if self.task_name == "classification":
-            dec_out = self.classification(x_enc)
-            return dec_out  # [B, N]
+            return self.classification(x_enc)  # [B, N]
         return None
