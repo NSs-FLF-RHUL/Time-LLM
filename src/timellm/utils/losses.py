@@ -1,3 +1,5 @@
+# ruff: noqa: N801, ARG002
+
 # This source code is provided for the purposes of scientific reproducibility
 # under the following limited license from Element AI Inc. The code is an
 # implementation of the N-BEATS model (Oreshkin et al., N-BEATS: Neural basis
@@ -20,16 +22,9 @@ from torch import nn
 
 
 def divide_no_nan(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    """
-    a/b where the resulted NaN or Inf are replaced by 0.
-
-    TODO: Replace with np.where and np.nan_to_num to replace safely.
-    But this will require us to write a test for this method first!
-    """
+    """a/b where the resulted NaN or Inf are replaced by 0."""
     result = a / b
-    result[result != result] = 0.0
-    result[result == np.inf] = 0.0
-    return result
+    return np.where((np.isnan(result)) | (result == np.inf), 0.0, result)  # result
 
 
 class mape_loss(nn.Module):
