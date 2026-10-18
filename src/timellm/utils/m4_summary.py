@@ -1,3 +1,5 @@
+# ruff: noqa: D101, D103, D107
+
 # This source code is provided for the purposes of scientific reproducibility
 # under the following limited license from Element AI Inc. The code is an
 # implementation of the N-BEATS model (Oreshkin et al., N-BEATS: Neural basis
@@ -12,12 +14,10 @@
 # protection. No license to patents is granted hereunder (whether express or
 # implied). Copyright 2020 Element AI Inc. All rights reserved.
 
-"""
-M4 Summary
-"""
+"""M4 Summary."""
 
-import os
 from collections import OrderedDict
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -25,38 +25,50 @@ import pandas as pd
 from timellm.data_provider.m4 import M4Dataset, M4Meta
 
 
-def group_values(values, groups, group_name):
+def group_values(values: np.ndarray, groups: np.ndarray, group_name: str) -> np.ndarray:
     return np.array([v[~np.isnan(v)] for v in values[groups == group_name]])
 
 
-def mase(forecast, insample, outsample, frequency):
+def mase(
+    forecast: np.ndarray, insample: np.ndarray, outsample: np.ndarray, frequency: int
+) -> np.float16 | np.float32 | np.float64:
     return np.mean(np.abs(forecast - outsample)) / np.mean(
         np.abs(insample[:-frequency] - insample[frequency:])
     )
 
 
-def smape_2(forecast, target):
+def smape_2(forecast: np.ndarray, target: np.ndarray) -> np.ndarray:
+    """
+    Squared Mean Absolute Percentage Error.
+
+    Divide by 1.0 instead of 0.0, in case when denom is zero the enumerator
+    will be 0.0 anyway.
+    """
     denom = np.abs(target) + np.abs(forecast)
-    # divide by 1.0 instead of 0.0, in case when denom is zero the enumerator will be 0.0 anyway.
     denom[denom == 0.0] = 1.0
     return 200 * np.abs(forecast - target) / denom
 
 
-def mape(forecast, target):
+def mape(forecast: np.ndarray, target: np.ndarray) -> np.ndarray:
+    """
+    Mean Absolute Percentage Error.
+
+    Divide by 1.0 instead of 0.0, in case when denom is zero the enumerator
+    will be 0.0 anyway.
+    """
     denom = np.abs(target)
-    # divide by 1.0 instead of 0.0, in case when denom is zero the enumerator will be 0.0 anyway.
     denom[denom == 0.0] = 1.0
     return 100 * np.abs(forecast - target) / denom
 
 
 class M4Summary:
-    def __init__(self, file_path, root_path):
+    def __init__(self, file_path: str, root_path: str) -> None:
         self.file_path = file_path
         self.training_set = M4Dataset.load(training=True, dataset_file=root_path)
         self.test_set = M4Dataset.load(training=False, dataset_file=root_path)
-        self.naive_path = os.path.join(root_path, "submission-Naive2.csv")
+        self.naive_path = Path(root_path) / "submission-Naive2.csv"
 
-    def evaluate(self):
+    def evaluate(self) -> tuple:
         """
         Evaluate forecasts using M4 test dataset.
 
@@ -65,7 +77,9 @@ class M4Summary:
         """
         grouped_owa = OrderedDict()
 
-        naive2_forecasts = pd.read_csv(self.naive_path).values[:, 1:].astype(np.float32)
+        naive2_forecasts = (
+            pd.read_csv(self.naive_path).to_numpy()[:, 1:].astype(np.float32)
+        )
         naive2_forecasts = np.array([v[~np.isnan(v)] for v in naive2_forecasts])
 
         model_mases = {}
@@ -75,8 +89,8 @@ class M4Summary:
         grouped_mapes = {}
         for group_name in M4Meta.seasonal_patterns:
             file_name = self.file_path + group_name + "_forecast.csv"
-            if os.path.exists(file_name):
-                model_forecast = pd.read_csv(file_name).values
+            if Path(file_name).exists():
+                model_forecast = pd.read_csv(file_name).to_numpy()
 
             naive2_forecast = group_values(
                 naive2_forecasts, self.test_set.groups, group_name
@@ -128,14 +142,15 @@ class M4Summary:
         grouped_model_mases = self.summarize_groups(model_mases)
         grouped_naive2_smapes = self.summarize_groups(naive2_smapes)
         grouped_naive2_mases = self.summarize_groups(naive2_mases)
-        for k in grouped_model_mases.keys():
+        for k in grouped_model_mases:
             grouped_owa[k] = (
                 grouped_model_mases[k] / grouped_naive2_mases[k]
                 + grouped_smapes[k] / grouped_naive2_smapes[k]
             ) / 2
 
-        def round_all(d):
-            return dict(map(lambda kv: (kv[0], np.round(kv[1], 3)), d.items()))
+        def round_all(d: OrderedDict) -> dict:
+            """Round all values in a dictionary and leave keys unchanged."""
+            return {key: np.round(v, 3) for key, v in d.items()}
 
         return (
             round_all(grouped_smapes),
@@ -144,15 +159,16 @@ class M4Summary:
             round_all(grouped_model_mases),
         )
 
-    def summarize_groups(self, scores):
+    def summarize_groups(self, scores: OrderedDict | dict) -> OrderedDict:
         """
         Re-group scores respecting M4 rules.
+
         :param scores: Scores per group.
         :return: Grouped scores.
         """
         scores_summary = OrderedDict()
 
-        def group_count(group_name):
+        def group_count(group_name: np.ndarray) -> int:
             return len(np.where(self.test_set.groups == group_name)[0])
 
         weighted_score = {}
