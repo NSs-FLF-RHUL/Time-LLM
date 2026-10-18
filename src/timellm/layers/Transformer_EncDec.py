@@ -1,10 +1,20 @@
-import torch.nn.functional as F
+# ruff: noqa: N999
+
+"""Transformer Encoder/Decoder."""
+
+from collections.abc import Callable
+
+import torch
+import torch.nn.functional as func
 from torch import nn
 
 
 class ConvLayer(nn.Module):
-    def __init__(self, c_in):
-        super(ConvLayer, self).__init__()
+    """Convolution layer."""
+
+    def __init__(self, c_in: int) -> None:
+        """Initialize ConvLayer."""
+        super().__init__()
         self.downConv = nn.Conv1d(
             in_channels=c_in,
             out_channels=c_in,
@@ -16,18 +26,28 @@ class ConvLayer(nn.Module):
         self.activation = nn.ELU()
         self.maxPool = nn.MaxPool1d(kernel_size=3, stride=2, padding=1)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass."""
         x = self.downConv(x.permute(0, 2, 1))
         x = self.norm(x)
         x = self.activation(x)
         x = self.maxPool(x)
-        x = x.transpose(1, 2)
-        return x
+        return x.transpose(1, 2)
 
 
 class EncoderLayer(nn.Module):
-    def __init__(self, attention, d_model, d_ff=None, dropout=0.1, activation="relu"):
-        super(EncoderLayer, self).__init__()
+    """Encoder Layer."""
+
+    def __init__(
+        self,
+        attention: Callable,
+        d_model: int,
+        d_ff: int | None = None,
+        dropout: float = 0.1,
+        activation: str = "relu",
+    ) -> None:
+        """Initialize Encoder Layer."""
+        super().__init__()
         d_ff = d_ff or 4 * d_model
         self.attention = attention
         self.conv1 = nn.Conv1d(in_channels=d_model, out_channels=d_ff, kernel_size=1)
@@ -35,9 +55,16 @@ class EncoderLayer(nn.Module):
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
         self.dropout = nn.Dropout(dropout)
-        self.activation = F.relu if activation == "relu" else F.gelu
+        self.activation = func.relu if activation == "relu" else func.gelu
 
-    def forward(self, x, attn_mask=None, tau=None, delta=None):
+    def forward(
+        self,
+        x: torch.Tensor,
+        attn_mask: torch.Tensor | None = None,
+        tau: torch.Tensor | None = None,
+        delta: torch.Tensor | None = None,
+    ) -> tuple:
+        """Forward pass."""
         new_x, attn = self.attention(x, x, x, attn_mask=attn_mask, tau=tau, delta=delta)
         x = x + self.dropout(new_x)
 
@@ -49,16 +76,30 @@ class EncoderLayer(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, attn_layers, conv_layers=None, norm_layer=None):
-        super(Encoder, self).__init__()
+    """Encoder layer."""
+
+    def __init__(
+        self,
+        attn_layers: list,
+        conv_layers: list | None = None,
+        norm_layer: nn.Module | None = None,
+    ) -> None:
+        """Initialize Encoder layer."""
+        super().__init__()
         self.attn_layers = nn.ModuleList(attn_layers)
         self.conv_layers = (
             nn.ModuleList(conv_layers) if conv_layers is not None else None
         )
         self.norm = norm_layer
 
-    def forward(self, x, attn_mask=None, tau=None, delta=None):
-        # x [B, L, D]
+    def forward(
+        self,
+        x: torch.Tensor,  # [B, L, D]
+        attn_mask: torch.Tensor | None = None,
+        tau: torch.Tensor | None = None,
+        delta: torch.Tensor | None = None,
+    ) -> tuple:
+        """Forward pass."""
         attns = []
         if self.conv_layers is not None:
             for i, (attn_layer, conv_layer) in enumerate(
@@ -82,16 +123,19 @@ class Encoder(nn.Module):
 
 
 class DecoderLayer(nn.Module):
+    """Decoder Layer."""
+
     def __init__(
         self,
-        self_attention,
-        cross_attention,
-        d_model,
-        d_ff=None,
-        dropout=0.1,
-        activation="relu",
-    ):
-        super(DecoderLayer, self).__init__()
+        self_attention: nn.Module,
+        cross_attention: nn.Module,
+        d_model: int,
+        d_ff: int | None = None,
+        dropout: float = 0.1,
+        activation: str = "relu",
+    ) -> None:
+        """Initialize Decoder Layer."""
+        super().__init__()
         d_ff = d_ff or 4 * d_model
         self.self_attention = self_attention
         self.cross_attention = cross_attention
@@ -101,9 +145,18 @@ class DecoderLayer(nn.Module):
         self.norm2 = nn.LayerNorm(d_model)
         self.norm3 = nn.LayerNorm(d_model)
         self.dropout = nn.Dropout(dropout)
-        self.activation = F.relu if activation == "relu" else F.gelu
+        self.activation = func.relu if activation == "relu" else func.gelu
 
-    def forward(self, x, cross, x_mask=None, cross_mask=None, tau=None, delta=None):
+    def forward(
+        self,
+        x: torch.Tensor,
+        cross: torch.Tensor,
+        x_mask: torch.Tensor | None = None,
+        cross_mask: torch.Tensor | None = None,
+        tau: torch.Tensor | None = None,
+        delta: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """Forward pass."""
         x = x + self.dropout(
             self.self_attention(x, x, x, attn_mask=x_mask, tau=tau, delta=None)[0]
         )
@@ -123,13 +176,30 @@ class DecoderLayer(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, layers, norm_layer=None, projection=None):
-        super(Decoder, self).__init__()
+    """Transformer Decoder Layer."""
+
+    def __init__(
+        self,
+        layers: list,
+        norm_layer: torch.nn.Module | None = None,
+        projection: torch.nn.Module | None = None,
+    ) -> None:
+        """Initialize Decoder."""
+        super().__init__()
         self.layers = nn.ModuleList(layers)
         self.norm = norm_layer
         self.projection = projection
 
-    def forward(self, x, cross, x_mask=None, cross_mask=None, tau=None, delta=None):
+    def forward(
+        self,
+        x: torch.Tensor,
+        cross: torch.Tensor,
+        x_mask: torch.Tensor | None = None,
+        cross_mask: torch.Tensor | None = None,
+        tau: torch.Tensor | None = None,
+        delta: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """Forward pass."""
         for layer in self.layers:
             x = layer(
                 x, cross, x_mask=x_mask, cross_mask=cross_mask, tau=tau, delta=delta
