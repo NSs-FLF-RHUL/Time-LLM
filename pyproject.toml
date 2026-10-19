@@ -68,6 +68,8 @@ lint.ignore = [
   "ISC001", # simplify implicit str concatenation (ruff-format recommended)
   "PLR2004", # magic values
   "S105", # possible hardcoded password (JB)
+  "S310", # (JB)
+  "PLR0913", # too many arguments in function (JB)
 ]
 lint.per-file-ignores = { "tests*" = [
   "ANN001", # Missing type annotation for argument
