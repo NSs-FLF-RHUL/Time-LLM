@@ -296,6 +296,7 @@ class Dataset_Custom(Dataset):
         timeenc: int = 0,
         freq: str = "h",
         percent: float = 100,
+        seasonal_patterns: str|None = None,
         nrows: int | None = None,
         *,
         scale: bool = True,
@@ -342,7 +343,7 @@ class Dataset_Custom(Dataset):
         cols = list(df_raw.columns)
         cols.remove(self.target)
         cols.remove("date")
-        df_raw = df_raw["date", *cols, self.target]
+        df_raw = df_raw[['date'] + cols + [self.target]] #df_raw["date", *cols, self.target]
         num_train = int(len(df_raw) * 0.7)
         num_test = int(len(df_raw) * 0.2)
         num_vali = len(df_raw) - num_train - num_test
