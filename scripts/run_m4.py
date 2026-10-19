@@ -1,10 +1,13 @@
+# ruff: noqa: ARG005, PLW2901, PD002, NPY002
+
 import argparse
 import os
 import random
 import time
+from pathlib import Path
 
 import numpy as np
-import pandas
+import pandas as pd
 import torch
 from accelerate import Accelerator, DeepSpeedPlugin, DistributedDataParallelKwargs
 from torch import optim
@@ -40,7 +43,8 @@ parser.add_argument(
     type=str,
     required=True,
     default="long_term_forecast",
-    help="task name, options:[long_term_forecast, short_term_forecast, imputation, classification, anomaly_detection]",
+    help="task name, options:[long_term_forecast, short_term_forecast, "
+    "imputation, classification, anomaly_detection]",
 )
 parser.add_argument("--is_training", type=int, required=True, default=1, help="status")
 parser.add_argument(
@@ -87,7 +91,8 @@ parser.add_argument(
     type=str,
     default="h",
     help="freq for time features encoding, "
-    "options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], "
+    "options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, "
+    "w:weekly, m:monthly], "
     "you can also use more detailed freq like 15min or 3h",
 )
 parser.add_argument(
@@ -182,7 +187,13 @@ accelerator = Accelerator(
 
 for ii in range(args.itr):
     # setting record of experiments
-    setting = f"{args.task_name}_{args.model_id}_{args.model}_{args.data}_ft{args.features}_sl{args.seq_len}_ll{args.label_len}_pl{args.pred_len}_dm{args.d_model}_nh{args.n_heads}_el{args.e_layers}_dl{args.d_layers}_df{args.d_ff}_fc{args.factor}_eb{args.embed}_{args.des}_{ii}"
+    setting = (
+        f"{args.task_name}_{args.model_id}_{args.model}_{args.data}_"
+        f"ft{args.features}_sl{args.seq_len}_ll{args.label_len}_"
+        f"pl{args.pred_len}_dm{args.d_model}_nh{args.n_heads}_"
+        f"el{args.e_layers}_dl{args.d_layers}_df{args.d_ff}_"
+        f"fc{args.factor}_eb{args.embed}_{args.des}_{ii}"
+    )
 
     if args.data == "m4":
         args.pred_len = M4Meta.horizons_map[args.seasonal_patterns]  # Up to M4 config
@@ -201,12 +212,12 @@ for ii in range(args.itr):
     else:
         model = TimeLLM.Model(args).float()
 
-    path = os.path.join(
-        args.checkpoints, setting + "-" + args.model_comment
+    path = Path(args.checkpoints) / Path(
+        setting + "-" + args.model_comment
     )  # unique checkpoint saving path
     args.content = load_content(args)
-    if not os.path.exists(path) and accelerator.is_local_main_process:
-        os.makedirs(path)
+    if not Path(path).exists() and accelerator.is_local_main_process:
+        Path(path).mkdir()
 
     time_now = time.time()
 
@@ -243,9 +254,7 @@ for ii in range(args.itr):
         model.train()
         epoch_time = time.time()
 
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(
-            train_loader
-        ):
+        for i, (batch_x, batch_y, _, batch_y_mark) in enumerate(train_loader):
             iter_count += 1
             model_optim.zero_grad()
             batch_x = batch_x.float().to(accelerator.device)
@@ -304,7 +313,8 @@ for ii in range(args.itr):
         vali_loss = test(args, accelerator, model, train_loader, vali_loader, criterion)
         test_loss = vali_loss
         accelerator.print(
-            f"Epoch: {epoch + 1}, Steps: {train_steps} | Train Loss: {train_loss:.7f} Vali Loss: {vali_loss:.7f} Test Loss: {test_loss:.7f}"
+            f"Epoch: {epoch + 1}, Steps: {train_steps} | Train Loss: {train_loss:.7f} "
+            f"Vali Loss: {vali_loss:.7f} Test Loss: {test_loss:.7f}"
         )
         early_stopping(vali_loss, model, path)  # model saving
         if early_stopping.early_stop:
@@ -318,7 +328,7 @@ for ii in range(args.itr):
         else:
             accelerator.print(f"Updating learning rate to {scheduler.get_last_lr()[0]}")
 
-    best_model_path = path + "/" + "checkpoint"
+    best_model_path = Path(path) / "checkpoint"
     accelerator.wait_for_everyone()
     unwrapped_model = accelerator.unwrap_model(model)
     torch.cuda.synchronize()
@@ -360,11 +370,11 @@ for ii in range(args.itr):
     accelerator.print("test shape:", preds.shape)
 
     folder_path = "./m4_results/" + args.model + "-" + args.model_comment + "/"
-    if not os.path.exists(folder_path) and accelerator.is_local_main_process:
-        os.makedirs(folder_path)
+    if not Path(folder_path).exists() and accelerator.is_local_main_process:
+        Path(folder_path).mkdir()
 
     if accelerator.is_local_main_process:
-        forecasts_df = pandas.DataFrame(
+        forecasts_df = pd.DataFrame(
             preds[:, :, 0], columns=[f"V{i + 1}" for i in range(args.pred_len)]
         )
         forecasts_df.index = test_loader.dataset.ids[: preds.shape[0]]
@@ -376,15 +386,14 @@ for ii in range(args.itr):
         accelerator.print(args.model)
         file_path = folder_path
         if (
-            "Weekly_forecast.csv" in os.listdir(file_path)
-            and "Monthly_forecast.csv" in os.listdir(file_path)
-            and "Yearly_forecast.csv" in os.listdir(file_path)
-            and "Daily_forecast.csv" in os.listdir(file_path)
-            and "Hourly_forecast.csv" in os.listdir(file_path)
-            and "Quarterly_forecast.csv" in os.listdir(file_path)
+            Path("Weekly_forecast.csv") in Path(file_path).iterdir()
+            and Path("Monthly_forecast.csv") in Path(file_path).iterdir()
+            and Path("Yearly_forecast.csv") in Path(file_path).iterdir()
+            and Path("Daily_forecast.csv") in Path(file_path).iterdir()
+            and Path("Hourly_forecast.csv") in Path(file_path).iterdir()
+            and Path("Quarterly_forecast.csv") in Path(file_path).iterdir()
         ):
             m4_summary = M4Summary(file_path, args.root_path)
-            # m4_forecast.set_index(m4_winner_forecast.columns[0], inplace=True)
             smape_results, owa_results, mape, mase = m4_summary.evaluate()
             accelerator.print("smape:", smape_results)
             accelerator.print("mape:", mape)
@@ -392,11 +401,12 @@ for ii in range(args.itr):
             accelerator.print("owa:", owa_results)
         else:
             accelerator.print(
-                "After all 6 tasks are finished, you can calculate the averaged performance"
+                "After all 6 tasks are finished, "
+                "you can calculate the averaged performance"
             )
 
 accelerator.wait_for_everyone()
 if accelerator.is_local_main_process:
-    path = "./checkpoints"  # unique checkpoint saving path
-    del_files(path)  # delete checkpoint files
+    path = Path("./checkpoints")  # unique checkpoint saving path
+    del_files(str(path))  # delete checkpoint files
     accelerator.print("success delete checkpoints")
