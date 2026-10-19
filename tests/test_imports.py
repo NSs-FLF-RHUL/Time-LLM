@@ -2,4 +2,4 @@
 
 
 def test_imports() -> None:
-    """Test that the package can be imported without errors"""
+    """Test that the package can be imported without errors."""
