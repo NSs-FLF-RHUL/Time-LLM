@@ -1,7 +1,10 @@
+# ruff: noqa: PLW2901, NPY002
+
 import argparse
 import os
 import random
 import time
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -37,7 +40,8 @@ parser.add_argument(
     type=str,
     required=True,
     default="long_term_forecast",
-    help="task name, options:[long_term_forecast, short_term_forecast, imputation, classification, anomaly_detection]",
+    help="task name, options:[long_term_forecast, short_term_forecast, "
+    "imputation, classification, anomaly_detection]",
 )
 parser.add_argument("--is_training", type=int, required=True, default=1, help="status")
 parser.add_argument(
@@ -84,7 +88,8 @@ parser.add_argument(
     type=str,
     default="h",
     help="freq for time features encoding, "
-    "options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], "
+    "options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, "
+    "w:weekly, m:monthly], "
     "you can also use more detailed freq like 15min or 3h",
 )
 parser.add_argument(
@@ -180,7 +185,13 @@ accelerator = Accelerator(
 
 for ii in range(args.itr):
     # setting record of experiments
-    setting = f"{args.task_name}_{args.model_id}_{args.model}_{args.data}_ft{args.features}_sl{args.seq_len}_ll{args.label_len}_pl{args.pred_len}_dm{args.d_model}_nh{args.n_heads}_el{args.e_layers}_dl{args.d_layers}_df{args.d_ff}_fc{args.factor}_eb{args.embed}_{args.des}_{ii}"
+    setting = (
+        f"{args.task_name}_{args.model_id}_{args.model}_{args.data}_"
+        f"ft{args.features}_sl{args.seq_len}_ll{args.label_len}_"
+        f"pl{args.pred_len}_dm{args.d_model}_nh{args.n_heads}_"
+        f"el{args.e_layers}_dl{args.d_layers}_df{args.d_ff}_"
+        f"fc{args.factor}_eb{args.embed}_{args.des}_{ii}"
+    )
 
     train_data, train_loader = data_provider(args, "train")
     vali_data, vali_loader = data_provider(args, "val")
@@ -193,22 +204,19 @@ for ii in range(args.itr):
     else:
         model = TimeLLM.Model(args).float()
 
-    path = os.path.join(
-        args.checkpoints, setting + "-" + args.model_comment
+    path = Path(args.checkpoints) / Path(
+        setting + "-" + args.model_comment
     )  # unique checkpoint saving path
     args.content = load_content(args)
-    if not os.path.exists(path) and accelerator.is_local_main_process:
-        os.makedirs(path)
+    if not Path(path).exists() and accelerator.is_local_main_process:
+        Path(path).mkdir(parents=True)
 
     time_now = time.time()
 
     train_steps = len(train_loader)
     early_stopping = EarlyStopping(accelerator=accelerator, patience=args.patience)
 
-    trained_parameters = []
-    for p in model.parameters():
-        if p.requires_grad is True:
-            trained_parameters.append(p)
+    trained_parameters = [p for p in model.parameters() if p.requires_grad]
 
     model_optim = optim.Adam(trained_parameters, lr=args.learning_rate)
 
@@ -328,7 +336,9 @@ for ii in range(args.itr):
             args, accelerator, model, test_data, test_loader, criterion, mae_metric
         )
         accelerator.print(
-            f"Epoch: {epoch + 1} | Train Loss: {train_loss:.7f} Vali Loss: {vali_loss:.7f} Test Loss: {test_loss:.7f} MAE Loss: {test_mae_loss:.7f}"
+            f"Epoch: {epoch + 1} | Train Loss: {train_loss:.7f} "
+            f"Vali Loss: {vali_loss:.7f} Test Loss: {test_loss:.7f} "
+            f"MAE Loss: {test_mae_loss:.7f}"
         )
 
         early_stopping(vali_loss, model, path)
@@ -357,6 +367,6 @@ for ii in range(args.itr):
 
 accelerator.wait_for_everyone()
 if accelerator.is_local_main_process:
-    path = "./checkpoints"  # unique checkpoint saving path
-    del_files(path)  # delete checkpoint files
+    path = Path("./checkpoints")  # unique checkpoint saving path
+    del_files(str(path))  # delete checkpoint files
     accelerator.print("success delete checkpoints")
