@@ -1,3 +1,9 @@
+# ruff: noqa: FBT001, FBT002
+
+"""Data factory."""
+
+from argparse import Namespace
+
 from torch.utils.data import DataLoader
 
 from timellm.data_provider_pretrain.data_loader import (
@@ -13,8 +19,15 @@ data_dict = {
 }
 
 
-def data_provider(args, data, data_path, pretrain=True, flag="train"):
-    Data = data_dict[data]
+def data_provider(
+    args: Namespace,
+    data: str,
+    data_path: str,
+    pretrain: bool = True,
+    flag: str = "train",
+) -> tuple:
+    """Provide data."""
+    dataset = data_dict[data]
     timeenc = 0 if args.embed != "timeF" else 1
     percent = args.percent
 
@@ -29,7 +42,7 @@ def data_provider(args, data, data_path, pretrain=True, flag="train"):
         batch_size = args.batch_size
         freq = args.freq
 
-    data_set = Data(
+    data_set = dataset(
         root_path=args.root_path,
         data_path=data_path,
         flag=flag,
