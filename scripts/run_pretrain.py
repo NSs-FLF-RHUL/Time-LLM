@@ -253,7 +253,7 @@ for ii in range(args.itr):
     )
 
     if args.use_amp:
-        scaler = torch.cuda.amp.GradScaler()
+        scaler = torch.amp.GradScaler("cuda")
 
     for epoch in range(args.train_epochs):
         iter_count = 0
@@ -286,7 +286,7 @@ for ii in range(args.itr):
 
             # encoder - decoder
             if args.use_amp:
-                with torch.cuda.amp.autocast():
+                with torch.amp.autocast("cuda"):
                     if args.output_attention:
                         outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                     else:
@@ -318,7 +318,7 @@ for ii in range(args.itr):
                 speed = (time.time() - time_now) / iter_count
                 left_time = speed * ((args.train_epochs - epoch) * train_steps - i)
                 accelerator.print(
-                    f"\tspeed: {speed:.4f}s/iter; left time: {left_time:.4f}s"
+                    f"\tspeed: {speed:.4f}s/iter; left time: {float(left_time):.4f}s"
                 )
                 iter_count = 0
                 time_now = time.time()
@@ -346,7 +346,7 @@ for ii in range(args.itr):
             args, accelerator, model, test_data, test_loader, criterion, mae_metric
         )
         accelerator.print(
-            f"Epoch: {epoch + 1} | Train Loss: {train_loss:.7f} "
+            f"Epoch: {epoch + 1} | Train Loss: {float(train_loss):.7f} "
             f"Vali Loss: {vali_loss:.7f} Test Loss: {test_loss:.7f} "
             f"MAE Loss: {test_mae_loss:.7f}"
         )

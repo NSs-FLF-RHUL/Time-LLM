@@ -70,8 +70,8 @@ class series_decomp_multi(nn.Module):
         moving_mean = []
         res = []
         for func in self.series_decomp:
-            sea, moving_avg = func(x)
-            moving_mean.append(moving_avg)
+            sea, mv_avg = func(x)
+            moving_mean.append(mv_avg)
             res.append(sea)
 
         sea = sum(res) / len(res)

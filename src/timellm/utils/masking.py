@@ -12,7 +12,7 @@ class TriangularCausalMask:
      to future positions.
     """
 
-    def __init__(self, b: int, l: int, device: str = "cpu") -> None:  # noqa: E741
+    def __init__(self, b: int, l: int, device: str | torch.device = "cpu") -> None:  # noqa: E741
         """
         Initialize the mask.
 
@@ -46,7 +46,7 @@ class ProbMask:
         l: int,  # noqa: E741
         index: np.ndarray | torch.Tensor,
         scores: np.ndarray | torch.Tensor,
-        device: str = "cpu",
+        device: str | torch.device = "cpu",
     ) -> None:
         """
         Initialize the mask.

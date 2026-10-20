@@ -163,7 +163,7 @@ class DataEmbedding(nn.Module):
         )
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, x: torch.Tensor, x_mark: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, x_mark: torch.Tensor | None) -> torch.Tensor:
         """Forward pass."""
         if x_mark is None:
             x = self.value_embedding(x) + self.position_embedding(x).to(x.device)
@@ -199,7 +199,7 @@ class DataEmbedding_wo_pos(nn.Module):
         )
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, x: torch.Tensor, x_mark: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, x_mark: torch.Tensor | None) -> torch.Tensor:
         """Forward pass."""
         if x_mark is None:
             x = self.value_embedding(x)
@@ -233,7 +233,7 @@ class PatchEmbedding(nn.Module):
         # Patching
         self.patch_len = patch_len
         self.stride = stride
-        self.padding_patch_layer = ReplicationPad1d((0, stride))
+        self.padding_patch_layer = ReplicationPad1d([0, stride])
 
         # Backbone, Input encoding: projection of feature vectors onto
         # a d-dim vector space

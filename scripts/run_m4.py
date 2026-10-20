@@ -196,10 +196,10 @@ for ii in range(args.itr):
     )
 
     if args.data == "m4":
-        args.pred_len = M4Meta.horizons_map[args.seasonal_patterns]  # Up to M4 config
+        args.pred_len = M4Meta().horizons_map[args.seasonal_patterns]  # Up to M4 config
         args.seq_len = 2 * args.pred_len
         args.label_len = args.pred_len
-        args.frequency_map = M4Meta.frequency_map[args.seasonal_patterns]
+        args.frequency_map = M4Meta().frequency_map[args.seasonal_patterns]
 
     train_data, train_loader = data_provider(args, "train")
     vali_data, vali_loader = data_provider(args, "val")
@@ -294,7 +294,7 @@ for ii in range(args.itr):
                 speed = (time.time() - time_now) / iter_count
                 left_time = speed * ((args.train_epochs - epoch) * train_steps - i)
                 accelerator.print(
-                    f"\tspeed: {speed:.4f}s/iter; left time: {left_time:.4f}s"
+                    f"\tspeed: {speed:.4f}s/iter; left time: {float(left_time):.4f}s"
                 )
                 iter_count = 0
                 time_now = time.time()
@@ -313,10 +313,11 @@ for ii in range(args.itr):
         vali_loss = test(args, accelerator, model, train_loader, vali_loader, criterion)
         test_loss = vali_loss
         accelerator.print(
-            f"Epoch: {epoch + 1}, Steps: {train_steps} | Train Loss: {train_loss:.7f} "
-            f"Vali Loss: {vali_loss:.7f} Test Loss: {test_loss:.7f}"
+            f"Epoch: {epoch + 1}, Steps: {train_steps} | "
+            f"Train Loss: {float(train_loss):.7f} "
+            f"Vali Loss: {float(vali_loss):.7f} Test Loss: {float(test_loss):.7f}"
         )
-        early_stopping(vali_loss, model, path)  # model saving
+        early_stopping(float(vali_loss), model, path)  # model saving
         if early_stopping.early_stop:
             accelerator.print("Early stopping")
             break
@@ -338,7 +339,7 @@ for ii in range(args.itr):
     )
 
     x, _ = train_loader.dataset.last_insample_window()
-    y = test_loader.dataset.timeseries
+    y = test_data.timeseries
     x = torch.tensor(x, dtype=torch.float32).to(accelerator.device)
     x = x.unsqueeze(-1)
 

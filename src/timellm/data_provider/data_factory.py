@@ -32,7 +32,7 @@ def data_provider(
     Create dataset and dataloader.
 
     :param args: run configuration.
-    :param flag: data type (train, test, etc).
+    :param flag: data type (train, test, etc.).
     :param seed: seed for random number generator.
     :return: PyTorch dataset and dataloader.
     """

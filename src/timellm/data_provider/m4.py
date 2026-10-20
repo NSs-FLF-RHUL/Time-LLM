@@ -18,6 +18,7 @@ import logging
 import pathlib
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from urllib import request
 
 import numpy as np
@@ -82,7 +83,7 @@ class M4Dataset:
 
     @staticmethod
     def load(
-        dataset_file: str = "../dataset/m4", *, training: bool = True
+        dataset_file: str | Path = "../dataset/m4", *, training: bool = True
     ) -> "M4Dataset":
         """
         Load cached dataset.

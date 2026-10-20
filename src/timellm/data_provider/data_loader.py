@@ -90,6 +90,9 @@ class Dataset_ETT_hour(Dataset):
             df_data = df_raw[cols_data]
         elif self.features == "S":
             df_data = df_raw[[self.target]]
+        else:
+            err_msg = f"features should be M, MS or S, not {self.features}."
+            raise ValueError(err_msg)
 
         if self.scale:
             train_data = df_data[border1s[0] : border2s[0]]
@@ -111,6 +114,9 @@ class Dataset_ETT_hour(Dataset):
                 pd.to_datetime(df_stamp["date"].values), freq=self.freq
             )
             data_stamp = data_stamp.transpose(1, 0)
+        else:
+            err_mgs = f"rimeenc should be 0 or 1, not {self.timeenc}."
+            raise ValueError(err_mgs)
 
         self.data_x = data[border1:border2]
         self.data_y = data[border1:border2]
@@ -222,6 +228,9 @@ class Dataset_ETT_minute(Dataset):
             df_data = df_raw[cols_data]
         elif self.features == "S":
             df_data = df_raw[[self.target]]
+        else:
+            err_msg = f"features should be M, MS or S, not {self.features}."
+            raise ValueError(err_msg)
 
         if self.scale:
             train_data = df_data[border1s[0] : border2s[0]]
@@ -245,6 +254,9 @@ class Dataset_ETT_minute(Dataset):
                 pd.to_datetime(df_stamp["date"].values), freq=self.freq
             )
             data_stamp = data_stamp.transpose(1, 0)
+        else:
+            err_mgs = f"rimeenc should be 0 or 1, not {self.timeenc}."
+            raise ValueError(err_mgs)
 
         self.data_x = data[border1:border2]
         self.data_y = data[border1:border2]
@@ -362,6 +374,9 @@ class Dataset_Custom(Dataset):
             df_data = df_raw[cols_data]
         elif self.features == "S":
             df_data = df_raw[[self.target]]
+        else:
+            err_msg = f"features should be M, MS or S, not {self.features}."
+            raise ValueError(err_msg)
 
         if self.scale:
             train_data = df_data[border1s[0] : border2s[0]]
@@ -383,6 +398,9 @@ class Dataset_Custom(Dataset):
                 pd.to_datetime(df_stamp["date"].values), freq=self.freq
             )
             data_stamp = data_stamp.transpose(1, 0)
+        else:
+            err_mgs = f"rimeenc should be 0 or 1, not {self.timeenc}."
+            raise ValueError(err_mgs)
 
         self.data_x = data[border1:border2]
         self.data_y = data[border1:border2]
@@ -445,7 +463,7 @@ class Dataset_M4(Dataset):
         self.pred_len = size[2]
 
         self.seasonal_patterns = seasonal_patterns
-        self.history_size = M4Meta.history_size[seasonal_patterns]
+        self.history_size = M4Meta().history_size[seasonal_patterns]
         self.window_sampling_limit = int(self.history_size * self.pred_len)
         self.flag = flag
 

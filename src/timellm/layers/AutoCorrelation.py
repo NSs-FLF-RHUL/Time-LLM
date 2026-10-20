@@ -184,8 +184,8 @@ class AutoCorrelation(nn.Module):
             ).permute(0, 3, 1, 2)
 
         if self.output_attention:
-            return (bigv.contiguous(), corr.permute(0, 3, 1, 2))
-        return (bigv.contiguous(), None)
+            return bigv.contiguous(), corr.permute(0, 3, 1, 2)
+        return bigv.contiguous(), None
 
 
 class AutoCorrelationLayer(nn.Module):

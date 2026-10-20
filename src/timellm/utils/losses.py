@@ -21,7 +21,7 @@ import torch as t
 from torch import nn
 
 
-def divide_no_nan(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+def divide_no_nan(a: np.ndarray | t.Tensor, b: np.ndarray | t.Tensor) -> np.ndarray:
     """a/b where the resulted NaN or Inf are replaced by 0."""
     result = a / b
     return np.where((np.isnan(result)) | (result == np.inf), 0.0, result)  # result
@@ -41,7 +41,7 @@ class mape_loss(nn.Module):
         forecast: t.Tensor,
         target: t.Tensor,
         mask: t.Tensor,
-    ) -> float:
+    ) -> t.Tensor:
         """
         MAPE loss.
 
@@ -52,7 +52,7 @@ class mape_loss(nn.Module):
         :param mask: 0/1 mask. Shape: batch, time
         :return: Loss value
         """
-        weights = divide_no_nan(mask, target)
+        weights = t.Tensor(divide_no_nan(mask, target))
         return t.mean(t.abs((forecast - target) * weights))
 
 
@@ -70,7 +70,7 @@ class smape_loss(nn.Module):
         forecast: t.Tensor,
         target: t.Tensor,
         mask: t.Tensor,
-    ) -> float:
+    ) -> t.Tensor:
         """
         SMAPE loss.
 
@@ -82,8 +82,10 @@ class smape_loss(nn.Module):
         :return: Loss value
         """
         return 200 * t.mean(
-            divide_no_nan(
-                t.abs(forecast - target), t.abs(forecast.data) + t.abs(target.data)
+            t.tensor(
+                divide_no_nan(
+                    t.abs(forecast - target), t.abs(forecast.data) + t.abs(target.data)
+                )
             )
             * mask
         )
@@ -103,7 +105,7 @@ class mase_loss(nn.Module):
         forecast: t.Tensor,
         target: t.Tensor,
         mask: t.Tensor,
-    ) -> float:
+    ) -> t.Tensor:
         """
         MASE loss.
 
@@ -117,5 +119,5 @@ class mase_loss(nn.Module):
         :return: Loss value
         """
         masep = t.mean(t.abs(insample[:, freq:] - insample[:, :-freq]), dim=1)
-        masked_masep_inv = divide_no_nan(mask, masep[:, None])
+        masked_masep_inv = t.Tensor(divide_no_nan(mask, masep[:, None]))
         return t.mean(t.abs(target - forecast) * masked_masep_inv)

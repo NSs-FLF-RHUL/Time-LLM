@@ -72,7 +72,6 @@ class M4Summary:
         """
         Evaluate forecasts using M4 test dataset.
 
-        :param forecast: Forecasts. Shape: timeseries, time.
         :return: sMAPE and OWA grouped by seasonal patterns.
         """
         grouped_owa = OrderedDict()
@@ -87,7 +86,7 @@ class M4Summary:
         naive2_mases = {}
         grouped_smapes = {}
         grouped_mapes = {}
-        for group_name in M4Meta.seasonal_patterns:
+        for group_name in M4Meta().seasonal_patterns:
             file_name = self.file_path + group_name + "_forecast.csv"
             if Path(file_name).exists():
                 model_forecast = pd.read_csv(file_name).to_numpy()
@@ -95,15 +94,13 @@ class M4Summary:
             naive2_forecast = group_values(
                 naive2_forecasts, self.test_set.groups, group_name
             )
-            target = group_values(
-                self.test_set.values, self.test_set.groups, group_name
-            )
+            target = group_values(self.test_set.vals, self.test_set.groups, group_name)
             # all timeseries within group have same frequency
             frequency = self.training_set.frequencies[
                 self.test_set.groups == group_name
             ][0]
             insample = group_values(
-                self.training_set.values, self.test_set.groups, group_name
+                self.training_set.vals, self.test_set.groups, group_name
             )
 
             model_mases[group_name] = np.mean(
@@ -168,7 +165,7 @@ class M4Summary:
         """
         scores_summary = OrderedDict()
 
-        def group_count(group_name: np.ndarray) -> int:
+        def group_count(group_name: str) -> int:
             return len(np.where(self.test_set.groups == group_name)[0])
 
         weighted_score = {}

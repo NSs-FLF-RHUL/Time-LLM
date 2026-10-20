@@ -161,7 +161,9 @@ class EarlyStopping:
         if self.accelerator is not None:
             model = self.accelerator.unwrap_model(model)
 
-        model_dict = create_checkpoint_dict(model, val_loss, optimizer, scheduler)
+        model_dict = create_checkpoint_dict(
+            model, val_loss, optimizer=optimizer, scheduler=scheduler
+        )
         path = Path(path)
         if path.is_dir():
             # For retro-compatibility with original Time-LLM
@@ -292,7 +294,7 @@ def vali(
             )
             # encoder - decoder
             if args.use_amp:
-                with torch.cuda.amp.autocast():
+                with torch.amp.autocast("cuda"):
                     if args.output_attention:
                         outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                     else:

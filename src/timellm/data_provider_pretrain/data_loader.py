@@ -101,6 +101,9 @@ class Dataset_ETT_hour(Dataset):
             df_data = df_raw[cols_data]
         elif self.features == "S":
             df_data = df_raw[[self.target]]
+        else:
+            err_msg = f"features should be M, MS or S, not {self.features}."
+            raise ValueError(err_msg)
 
         if self.scale:
             train_data = df_data[border1s[0] : border2s[0]]
@@ -122,6 +125,9 @@ class Dataset_ETT_hour(Dataset):
                 pd.to_datetime(df_stamp["date"].values), freq=self.freq
             )
             data_stamp = data_stamp.transpose(1, 0)
+        else:
+            err_msg = f"timeenc should be 0 or 1, not {self.timeenc}."
+            raise ValueError(err_msg)
 
         self.data_x = data[border1:border2]
         self.data_y = data[border1:border2]
@@ -239,6 +245,9 @@ class Dataset_ETT_minute(Dataset):
             df_data = df_raw[cols_data]
         elif self.features == "S":
             df_data = df_raw[[self.target]]
+        else:
+            err_msg = f"features should be M, MS or S, not {self.features}."
+            raise ValueError(err_msg)
 
         if self.scale:
             train_data = df_data[border1s[0] : border2s[0]]
@@ -262,6 +271,10 @@ class Dataset_ETT_minute(Dataset):
                 pd.to_datetime(df_stamp["date"].to_numpy()), freq=self.freq
             )
             data_stamp = data_stamp.transpose(1, 0)
+
+        else:
+            err_msg = f"timeenc should be 0 or 1, not {self.timeenc}."
+            raise ValueError(err_msg)
 
         self.data_x = data[border1:border2]
         self.data_y = data[border1:border2]

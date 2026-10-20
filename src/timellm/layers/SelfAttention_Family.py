@@ -3,6 +3,7 @@
 """Self attention family."""
 
 from math import sqrt
+from typing import Any
 
 import numpy as np
 import torch
@@ -36,7 +37,7 @@ class DSAttention(nn.Module):
         queries: torch.Tensor,
         keys: torch.Tensor,
         values: torch.Tensor,
-        attn_mask: torch.Tensor,
+        attn_mask: torch.Tensor | None,
         tau: torch.Tensor | None = None,
         delta: torch.Tensor | None = None,
     ) -> tuple:
@@ -95,7 +96,7 @@ class FullAttention(nn.Module):
         attn_mask: torch.Tensor | None,
         tau: torch.Tensor | None = None,
         delta: torch.Tensor | None = None,
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor, Any]:
         """Forward pass."""
         b, seq_len, h, e = queries.shape
         _, s, _, d = values.shape
@@ -226,7 +227,9 @@ class ProbAttention(nn.Module):
         u_part = min(l_k, u_part)
         u = min(l_q, u)
 
-        scores_top, index = self._prob_QK(queries, keys, sample_k=u_part, n_top=u)
+        scores_top, index = self._prob_QK(
+            queries, keys, sample_k=int(u_part), n_top=int(u)
+        )
 
         # add scale factor
         scale = self.scale or 1.0 / sqrt(d)
