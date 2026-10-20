@@ -1,4 +1,4 @@
-# ruff: noqa: N999
+# ruff: noqa: N999, PLR0912, T201, ERA001
 
 """Define TimeLLM's model."""
 
@@ -66,39 +66,75 @@ class Model(nn.Module):
             self.llama_config.num_hidden_layers = configs.llm_layers
             self.llama_config.output_attentions = True
             self.llama_config.output_hidden_states = True
-
-            self.llm_model = LlamaModel.from_pretrained(
-                "huggyllama/llama-7b",
-                trust_remote_code=True,
-                local_files_only=False,
-                config=self.llama_config,
-            )
-
-            self.tokenizer = LlamaTokenizer.from_pretrained(
-                "huggyllama/llama-7b",
-                trust_remote_code=True,
-                local_files_only=False,
-            )
-
+            try:
+                self.llm_model = LlamaModel.from_pretrained(
+                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/",
+                    "huggyllama/llama-7b",
+                    trust_remote_code=True,
+                    local_files_only=True,
+                    config=self.llama_config,
+                    # load_in_4bit=True
+                )
+            except OSError:  # downloads model from HF is not already done
+                print("Local model files not found. Attempting to download...")
+                self.llm_model = LlamaModel.from_pretrained(
+                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/",
+                    "huggyllama/llama-7b",
+                    trust_remote_code=True,
+                    local_files_only=False,
+                    config=self.llama_config,
+                    # load_in_4bit=True
+                )
+            try:
+                self.tokenizer = LlamaTokenizer.from_pretrained(
+                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/tokenizer.model",
+                    "huggyllama/llama-7b",
+                    trust_remote_code=True,
+                    local_files_only=True,
+                )
+            except OSError:  # downloads the tokenizer from HF if not already done
+                print("Local tokenizer files not found. Atempting to download them..")
+                self.tokenizer = LlamaTokenizer.from_pretrained(
+                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/tokenizer.model",
+                    "huggyllama/llama-7b",
+                    trust_remote_code=True,
+                    local_files_only=False,
+                )
         elif configs.llm_model == "GPT2":
             self.gpt2_config = GPT2Config.from_pretrained("openai-community/gpt2")
 
             self.gpt2_config.num_hidden_layers = configs.llm_layers
             self.gpt2_config.output_attentions = True
             self.gpt2_config.output_hidden_states = True
-            self.llm_model = GPT2Model.from_pretrained(
-                "openai-community/gpt2",
-                trust_remote_code=True,
-                local_files_only=False,
-                config=self.gpt2_config,
-            )
+            try:
+                self.llm_model = GPT2Model.from_pretrained(
+                    "openai-community/gpt2",
+                    trust_remote_code=True,
+                    local_files_only=True,
+                    config=self.gpt2_config,
+                )
+            except OSError:  # downloads model from HF is not already done
+                print("Local model files not found. Attempting to download...")
+                self.llm_model = GPT2Model.from_pretrained(
+                    "openai-community/gpt2",
+                    trust_remote_code=True,
+                    local_files_only=False,
+                    config=self.gpt2_config,
+                )
 
-            self.tokenizer = GPT2Tokenizer.from_pretrained(
-                "openai-community/gpt2",
-                trust_remote_code=True,
-                local_files_only=False,
-            )
-
+            try:
+                self.tokenizer = GPT2Tokenizer.from_pretrained(
+                    "openai-community/gpt2",
+                    trust_remote_code=True,
+                    local_files_only=True,
+                )
+            except OSError:  # downloads the tokenizer from HF if not already done
+                print("Local tokenizer files not found. Atempting to download them..")
+                self.tokenizer = GPT2Tokenizer.from_pretrained(
+                    "openai-community/gpt2",
+                    trust_remote_code=True,
+                    local_files_only=False,
+                )
         elif configs.llm_model == "BERT":
             self.bert_config = BertConfig.from_pretrained(
                 "google-bert/bert-base-uncased"
@@ -107,17 +143,35 @@ class Model(nn.Module):
             self.bert_config.num_hidden_layers = configs.llm_layers
             self.bert_config.output_attentions = True
             self.bert_config.output_hidden_states = True
-            self.llm_model = BertModel.from_pretrained(
-                "google-bert/bert-base-uncased",
-                trust_remote_code=True,
-                local_files_only=False,
-                config=self.bert_config,
-            )
-            self.tokenizer = BertTokenizer.from_pretrained(
-                "google-bert/bert-base-uncased",
-                trust_remote_code=True,
-                local_files_only=False,
-            )
+            try:
+                self.llm_model = BertModel.from_pretrained(
+                    "google-bert/bert-base-uncased",
+                    trust_remote_code=True,
+                    local_files_only=True,
+                    config=self.bert_config,
+                )
+            except OSError:  # downloads model from HF is not already done
+                print("Local model files not found. Attempting to download...")
+                self.llm_model = BertModel.from_pretrained(
+                    "google-bert/bert-base-uncased",
+                    trust_remote_code=True,
+                    local_files_only=False,
+                    config=self.bert_config,
+                )
+
+            try:
+                self.tokenizer = BertTokenizer.from_pretrained(
+                    "google-bert/bert-base-uncased",
+                    trust_remote_code=True,
+                    local_files_only=True,
+                )
+            except OSError:  # downloads the tokenizer from HF if not already done
+                print("Local tokenizer files not found. Atempting to download them..")
+                self.tokenizer = BertTokenizer.from_pretrained(
+                    "google-bert/bert-base-uncased",
+                    trust_remote_code=True,
+                    local_files_only=False,
+                )
         else:
             model_not_defined_err = "LLM model is not defined"
             raise ValueError(model_not_defined_err)
