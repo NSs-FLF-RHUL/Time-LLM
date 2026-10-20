@@ -119,7 +119,7 @@ class Model(nn.Module):
         """Forward pass."""
         if self.task_name in [
             "long_term_forecast",
-            self.task_name == "short_term_forecast",
+            "short_term_forecast",
         ]:
             dec_out = self.forecast(x_enc)
             return dec_out[:, -self.pred_len :, :]  # [B, L, D]
