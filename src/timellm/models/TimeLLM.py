@@ -203,7 +203,7 @@ class Model(nn.Module):
 
         self.word_embeddings = self.llm_model.get_input_embeddings().weight
         self.vocab_size = self.word_embeddings.shape[0]
-        if self.task_name == 'long_term_forecast':
+        if self.task_name == "long_term_forecast":
             self.num_tokens = 1000
         elif self.task_name == "short_term_forecast":
             self.num_tokens = 100
