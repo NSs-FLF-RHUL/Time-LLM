@@ -1,3 +1,5 @@
+# ruff: noqa: FBT001, FBT002
+
 """Utility functions for timellm."""
 
 import random
@@ -22,7 +24,6 @@ def adjust_learning_rate(
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     epoch: int,
     args: Namespace,
-    *,
     printout: bool = True,
 ) -> None:
     """Adjust learning rate."""
@@ -59,9 +60,8 @@ class EarlyStopping:
         self,
         accelerator: Accelerator,
         patience: int = 7,
-        delta: float = 0,
-        *,
         verbose: bool = False,
+        delta: float = 0,
         save_mode: bool = True,
     ) -> None:
         """

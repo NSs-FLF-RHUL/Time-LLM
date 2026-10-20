@@ -22,7 +22,6 @@ class DSAttention(nn.Module):
         factor: float = 5,
         scale: float | None = None,
         attention_dropout: float = 0.1,
-        *,
         output_attention: bool = False,
     ) -> None:
         """Initialize DSAttention layer."""
@@ -78,7 +77,6 @@ class FullAttention(nn.Module):
         factor: float = 5,
         scale: float | None = None,
         attention_dropout: float = 0.1,
-        *,
         output_attention: bool = False,
     ) -> None:
         """Initialize Full Attention layer."""
@@ -127,7 +125,6 @@ class ProbAttention(nn.Module):
         factor: float = 5,
         scale: float | None = None,
         attention_dropout: float = 0.1,
-        *,
         output_attention: bool = False,
     ) -> None:
         """Initialize Probability Attention layer."""

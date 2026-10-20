@@ -171,8 +171,7 @@ class Dataset_ETT_minute(Dataset):
         timeenc: int = 0,
         freq: str = "t",
         percent: float = 100,
-        seasonal_patterns: str | None = None,
-        *,
+        seasonal_patterns: None = None,
         pretrain: bool = True,
     ) -> None:
         """Initialize dataset."""

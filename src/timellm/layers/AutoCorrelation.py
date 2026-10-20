@@ -25,8 +25,7 @@ class AutoCorrelation(nn.Module):
         factor: int = 1,
         scale=None,  # noqa: ANN001
         attention_dropout: float = 0.1,
-        *,
-        output_attention: bool = False,
+        output_attention: bool = False,  # noqa: FBT001, FBT002
     ) -> None:
         """Initialize AutoCorrelation."""
         super().__init__()

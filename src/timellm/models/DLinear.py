@@ -16,7 +16,7 @@ class Model(nn.Module):
     Paper link: https://arxiv.org/pdf/2205.13504.pdf
     """
 
-    def __init__(self, configs: Namespace, *, individual: bool = False) -> None:
+    def __init__(self, configs: Namespace, individual: bool = False) -> None:  # noqa: FBT001, FBT002
         """
         Initialize model.
 

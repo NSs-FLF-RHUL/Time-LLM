@@ -14,8 +14,7 @@ class Inception_Block_V1(nn.Module):
         in_channels: int,
         out_channels: int,
         num_kernels: int = 6,
-        *,
-        init_weight: bool = True,
+        init_weight: bool = True,  # noqa: FBT001, FBT002
     ) -> None:
         """Initialize Inception block."""
         super().__init__()
@@ -52,8 +51,7 @@ class Inception_Block_V2(nn.Module):
         in_channels: int,
         out_channels: int,
         num_kernels: int = 6,
-        *,
-        init_weight: bool = True,
+        init_weight: bool = True,  # noqa: FBT001, FBT002
     ) -> None:
         """Initialize Inception block."""
         super().__init__()

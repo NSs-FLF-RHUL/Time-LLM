@@ -1,4 +1,4 @@
-# ruff: noqa: N999, D100
+# ruff: noqa: N999, D100, FBT001, FBT002
 
 import torch
 from torch import nn
@@ -11,7 +11,6 @@ class Normalize(nn.Module):
         self,
         num_features: int,
         eps: float = 1e-5,
-        *,
         affine: bool = False,
         subtract_last: bool = False,
         non_norm: bool = False,

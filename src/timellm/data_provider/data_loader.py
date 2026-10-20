@@ -1,4 +1,4 @@
-# ruff: noqa: N801, ARG002, RUF005
+# ruff: noqa: N801, ARG002, RUF005, FBT001, FBT002
 
 """Datasets in timellm's format."""
 
@@ -27,11 +27,11 @@ class Dataset_ETT_hour(Dataset):
         features: str = "S",
         data_path: str = "ETTh1.csv",
         target: str = "OT",
+        scale: bool = True,
         timeenc: int = 0,
         freq: str = "h",
         percent: float = 100,
-        *,
-        scale: bool = True,
+        seasonal_patterns: None = None,
     ) -> None:
         """Initialize EETh dataset."""
         if flag not in ["train", "test", "val"]:
@@ -165,11 +165,11 @@ class Dataset_ETT_minute(Dataset):
         features: str = "S",
         data_path: str = "ETTm1.csv",
         target: str = "OT",
+        scale: bool = True,
         timeenc: int = 0,
         freq: str = "t",
         percent: float = 100,
-        *,
-        scale: bool = True,
+        seasonal_patterns: None = None,
     ) -> None:
         """Initialize ETTm dataset."""
         if flag not in ["train", "test", "val"]:
@@ -305,13 +305,12 @@ class Dataset_Custom(Dataset):
         features: str = "S",
         data_path: str | Path = "ETTh1.csv",
         target: str = "OT",
+        scale: bool = True,
         timeenc: int = 0,
         freq: str = "h",
         percent: float = 100,
-        seasonal_patterns: str | None = None,
+        seasonal_patterns: None = None,
         nrows: int | None = None,
-        *,
-        scale: bool = True,
     ) -> None:
         """Initialize custom dataset."""
         if flag not in ["train", "test", "val"]:
@@ -444,11 +443,11 @@ class Dataset_M4(Dataset):
         flag: str = "pred",
         features: str = "S",
         target: str = "OT",
-        timeenc: int = 0,
-        seasonal_patterns: str = "Yearly",
-        *,
         scale: bool = False,
         inverse: bool = False,
+        timeenc: int = 0,
+        freq: None = None,
+        seasonal_patterns: str = "Yearly",
     ) -> None:
         """Initialize M4 dataset."""
         self.features = features
