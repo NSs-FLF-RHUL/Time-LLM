@@ -21,6 +21,7 @@ dependencies = [
   "transformers[tiktoken,sentencepiece]",
   "deepspeed",
   "sentencepiece",
+  "reformer-pytorch",
 ]
 description = "Reprogramming framework to repurpose LLMs for general time series forecasting."
 dynamic = ["version"]
