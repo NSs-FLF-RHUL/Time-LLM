@@ -26,14 +26,26 @@ data_dict = {
 
 
 def data_provider(
-    args: Namespace, flag: "str", seed: int | None = None
+    args: Namespace,
+    flag: "str",
+    seed: int | None = None,
+    data_set: torch.utils.data.Dataset | None = None,
+    *,
+    scale: bool = True,
 ) -> tuple[torch.utils.data.Dataset, torch.utils.data.DataLoader]:
     """
-    Create dataset and dataloader.
+    Create (dataset and) dataloader.
+
+    If data_set is not provided, data are read from the path indicated in args. This
+    function can be called several time with data_set = None to load data from
+    different files. Several datasets can then be merged and passed as argument
+    to this function to create a unique dataloader for an extended dataset.
 
     :param args: run configuration.
     :param flag: data type (train, test, etc.).
     :param seed: seed for random number generator.
+    :param data_set: data set, optional.
+    :param scale: whether to scale the data (default: True).
     :return: PyTorch dataset and dataloader.
     """
     data = data_dict[args.data]
@@ -51,33 +63,37 @@ def data_provider(
         batch_size = args.batch_size
         freq = args.freq
 
-    if args.data == "m4":
-        drop_last = False
-        data_set = data(
-            root_path=args.root_path,
-            data_path=args.data_path,
-            flag=flag,
-            size=[args.seq_len, args.label_len, args.pred_len],
-            features=args.features,
-            target=args.target,
-            timeenc=timeenc,
-            freq=freq,
-            seasonal_patterns=args.seasonal_patterns,
-        )
-    else:
-        data_set = data(
-            root_path=args.root_path,
-            data_path=args.data_path,
-            flag=flag,
-            size=[args.seq_len, args.label_len, args.pred_len],
-            features=args.features,
-            target=args.target,
-            timeenc=timeenc,
-            freq=freq,
-            percent=percent,
-            seasonal_patterns=args.seasonal_patterns,
-            nrows=args.nrows,
-        )
+    if data_set is None:
+        if args.data == "m4":
+            drop_last = False
+            data_set = data(
+                root_path=args.root_path,
+                data_path=args.data_path,
+                flag=flag,
+                size=[args.seq_len, args.label_len, args.pred_len],
+                features=args.features,
+                target=args.target,
+                timeenc=timeenc,
+                freq=freq,
+                seasonal_patterns=args.seasonal_patterns,
+            )
+        else:
+            data_set = data(
+                root_path=args.root_path,
+                data_path=args.data_path,
+                flag=flag,
+                size=[args.seq_len, args.label_len, args.pred_len],
+                features=args.features,
+                target=args.target,
+                timeenc=timeenc,
+                freq=freq,
+                percent=percent,
+                seasonal_patterns=args.seasonal_patterns,
+                skiprows=args.skiprows,
+                nrows=args.nrows,
+                scale=scale,
+            )
+
     if seed is not None:
         g = torch.Generator()
         g.manual_seed(seed)
