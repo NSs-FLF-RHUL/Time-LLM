@@ -1,3 +1,5 @@
+# ruff: noqa: N801, ARG002
+
 # This source code is provided for the purposes of scientific reproducibility
 # under the following limited license from Element AI Inc. The code is an
 # implementation of the N-BEATS model (Oreshkin et al., N-BEATS: Neural basis
@@ -12,70 +14,102 @@
 # protection. No license to patents is granted hereunder (whether express or
 # implied). Copyright © 2020 Element AI Inc. All rights reserved.
 
-"""
-Loss functions for PyTorch.
-"""
+"""Loss functions for PyTorch."""
 
-import torch as t
-import torch.nn as nn
 import numpy as np
-import pdb
+import torch as t
+from torch import nn
 
 
-def divide_no_nan(a, b):
-    """
-    a/b where the resulted NaN or Inf are replaced by 0.
-    """
+def divide_no_nan(a: np.ndarray | t.Tensor, b: np.ndarray | t.Tensor) -> np.ndarray:
+    """a/b where the resulted NaN or Inf are replaced by 0."""
     result = a / b
-    result[result != result] = .0
-    result[result == np.inf] = .0
-    return result
+    return np.where((np.isnan(result)) | (result == np.inf), 0.0, result)  # result
 
 
 class mape_loss(nn.Module):
-    def __init__(self):
-        super(mape_loss, self).__init__()
+    """FIXME."""
 
-    def forward(self, insample: t.Tensor, freq: int,
-                forecast: t.Tensor, target: t.Tensor, mask: t.Tensor) -> t.float:
+    def __init__(self) -> None:
+        """FIXME - can just be removed?."""
+        super().__init__()
+
+    def forward(
+        self,
+        insample: t.Tensor,
+        freq: int,
+        forecast: t.Tensor,
+        target: t.Tensor,
+        mask: t.Tensor,
+    ) -> t.Tensor:
         """
-        MAPE loss as defined in: https://en.wikipedia.org/wiki/Mean_absolute_percentage_error
+        MAPE loss.
+
+        See https://en.wikipedia.org/wiki/Mean_absolute_percentage_error for definition.
 
         :param forecast: Forecast values. Shape: batch, time
         :param target: Target values. Shape: batch, time
         :param mask: 0/1 mask. Shape: batch, time
         :return: Loss value
         """
-        weights = divide_no_nan(mask, target)
+        weights = t.Tensor(divide_no_nan(mask, target))
         return t.mean(t.abs((forecast - target) * weights))
 
 
 class smape_loss(nn.Module):
-    def __init__(self):
-        super(smape_loss, self).__init__()
+    """FIXME."""
 
-    def forward(self, insample: t.Tensor, freq: int,
-                forecast: t.Tensor, target: t.Tensor, mask: t.Tensor) -> t.float:
+    def __init__(self) -> None:
+        """FIXME - can just be removed?."""
+        super().__init__()
+
+    def forward(
+        self,
+        insample: t.Tensor,
+        freq: int,
+        forecast: t.Tensor,
+        target: t.Tensor,
+        mask: t.Tensor,
+    ) -> t.Tensor:
         """
-        sMAPE loss as defined in https://robjhyndman.com/hyndsight/smape/ (Makridakis 1993)
+        SMAPE loss.
+
+        See https://robjhyndman.com/hyndsight/smape/ (Makridakis 1993) for definition.
 
         :param forecast: Forecast values. Shape: batch, time
         :param target: Target values. Shape: batch, time
         :param mask: 0/1 mask. Shape: batch, time
         :return: Loss value
         """
-        return 200 * t.mean(divide_no_nan(t.abs(forecast - target),
-                                          t.abs(forecast.data) + t.abs(target.data)) * mask)
+        return 200 * t.mean(
+            t.tensor(
+                divide_no_nan(
+                    t.abs(forecast - target), t.abs(forecast.data) + t.abs(target.data)
+                )
+            )
+            * mask
+        )
 
 
 class mase_loss(nn.Module):
-    def __init__(self):
-        super(mase_loss, self).__init__()
+    """FIXME."""
 
-    def forward(self, insample: t.Tensor, freq: int,
-                forecast: t.Tensor, target: t.Tensor, mask: t.Tensor) -> t.float:
+    def __init__(self) -> None:
+        """FIXME - can just be removed?."""
+        super().__init__()
+
+    def forward(
+        self,
+        insample: t.Tensor,
+        freq: int,
+        forecast: t.Tensor,
+        target: t.Tensor,
+        mask: t.Tensor,
+    ) -> t.Tensor:
         """
-        MASE loss as defined in "Scaled Errors" https://robjhyndman.com/papers/mase.pdf
+        MASE loss.
+
+        See "Scaled Errors" https://robjhyndman.com/papers/mase.pdf for definition.
 
         :param insample: Insample values. Shape: batch, time_i
         :param freq: Frequency value
@@ -85,5 +119,5 @@ class mase_loss(nn.Module):
         :return: Loss value
         """
         masep = t.mean(t.abs(insample[:, freq:] - insample[:, :-freq]), dim=1)
-        masked_masep_inv = divide_no_nan(mask, masep[:, None])
+        masked_masep_inv = t.Tensor(divide_no_nan(mask, masep[:, None]))
         return t.mean(t.abs(target - forecast) * masked_masep_inv)
