@@ -6,7 +6,7 @@ import pytest
 from timellm.utils import losses
 
 
-def test_divide_no_nan():
+def test_divide_no_nan() -> None:
     a = np.array([1, 2, np.nan, 4, 5, np.inf], dtype=np.float32)
     b = np.array([0, 2, 3, np.nan, 5, 6], dtype=np.float32)
     with pytest.warns() as record:
