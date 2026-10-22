@@ -347,7 +347,7 @@ def vali_pulsar(
             batch_y = by.float()
 
             batch_x_mark = bxm.float().to(accelerator.device)
-            batch_y_mark = bym.float().to(accelerator.device)
+            batch_y_mark = bym
 
             # decoder input
             dec_inp = torch.zeros_like(batch_y[:, -args.pred_len :, :]).float()
