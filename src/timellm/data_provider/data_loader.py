@@ -310,6 +310,7 @@ class Dataset_Custom(Dataset):
         freq: str = "h",
         percent: float = 100,
         seasonal_patterns: None = None,
+        skiprows: int | None = None,
         nrows: int | None = None,
     ) -> None:
         """Initialize custom dataset."""
@@ -338,6 +339,7 @@ class Dataset_Custom(Dataset):
         self.root_path = root_path
         self.data_path = data_path
         self.nrows = nrows
+        self.skiprows = skiprows
         self.__read_data__()
 
         self.enc_in = self.data_x.shape[-1]
@@ -346,7 +348,11 @@ class Dataset_Custom(Dataset):
     def __read_data__(self) -> None:
         """Read custom dataset."""
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(Path(self.root_path) / self.data_path, nrows=self.nrows)
+        df_raw = pd.read_csv(
+            Path(self.root_path) / self.data_path,
+            skiprows=range(1, self.skiprows) if self.skiprows is not None else None,
+            nrows=self.nrows,
+        )
 
         """
         df_raw.columns: ['date', ...(other features), target feature]
@@ -398,7 +404,7 @@ class Dataset_Custom(Dataset):
             )
             data_stamp = data_stamp.transpose(1, 0)
         else:
-            err_mgs = f"rimeenc should be 0 or 1, not {self.timeenc}."
+            err_mgs = f"timeenc should be 0 or 1, not {self.timeenc}."
             raise ValueError(err_mgs)
 
         self.data_x = data[border1:border2]

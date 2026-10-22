@@ -357,16 +357,36 @@ def vali_pulsar(
                 .to(accelerator.device)
             )
             # encoder - decoder
-            outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+            outputs = model(
+                batch_x,
+                batch_x_mark,
+                dec_inp,
+                batch_y_mark.float().to(accelerator.device),
+            )
 
             outputs, batch_y = accelerator.gather_for_metrics((outputs, batch_y))
 
             f_dim = -1 if args.features == "MS" else 0
-            outputs = outputs[:, -args.pred_len :, f_dim:]
-            batch_y = batch_y[:, -args.pred_len :, f_dim:].to(accelerator.device)
+            # outputs = outputs[:, -args.pred_len :, f_dim:]
+            outputs = torch.hstack(
+                (
+                    batch_y[:, : -args.pred_len, f_dim:].to(accelerator.device),
+                    outputs[:, :, f_dim:],
+                )
+            )
+            batch_y = batch_y[:, :, f_dim:].to(accelerator.device)
+            # batch_y = batch_y[:, -args.pred_len :, f_dim:].to(accelerator.device)
 
-            pred_dlabels = discr(outputs).detach()
-            true_dlabels = discr(batch_y).detach()
+            pred_dlabels = discr(
+                torch.cat(
+                    (batch_y_mark.float().to(accelerator.device), outputs), dim=-1
+                )
+            ).detach()
+            true_dlabels = discr(
+                torch.cat(
+                    (batch_y_mark.float().to(accelerator.device), batch_y), dim=-1
+                )
+            ).detach()
 
             loss = criterion(
                 pred_dlabels,
@@ -391,8 +411,11 @@ def vali_pulsar(
     return (
         total_loss,
         total_loss_d,
-        pred_dlabels.mean().cpu(),
-        true_dlabels.mean().cpu(),
+        pred_dlabels,
+        true_dlabels,
+        batch_y,
+        outputs,
+        batch_y_mark,
     )
 
 

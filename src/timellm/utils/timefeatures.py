@@ -4,6 +4,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+import torch
 from pandas import DatetimeIndex
 from pandas.tseries import offsets
 from pandas.tseries.frequencies import to_offset
@@ -20,6 +21,9 @@ class TimeFeature:
 
     def __repr__(self) -> str:  # noqa: D105
         return self.__class__.__name__ + "()"
+
+    def reverse(self, t: np.ndarray) -> np.ndarray:
+        """Decode array t back to time features."""
 
 
 class SecondOfMinute(TimeFeature):
@@ -102,6 +106,18 @@ class WeekOfYear(TimeFeature):
         return (index.isocalendar().week - 1) / 52.0 - 0.5
 
 
+class YearOfCentury(TimeFeature):
+    """Year of 1950-2050 century encoded as value between [-0.5, 0.5]."""
+
+    def __call__(self, index: pd.DatetimeIndex) -> np.ndarray:
+        """Encode year of century as floats."""
+        return (index.year - 1950) / 99.0 - 0.5
+
+    def reverse(self, t: np.ndarray) -> np.ndarray:
+        """Decode floats as year."""
+        return (t + 0.5) * 99.0 + 1950
+
+
 def time_features_from_frequency_str(freq_str: str) -> list[TimeFeature]:
     """
     Return a list of appropriate time features for the given frequency string.
@@ -133,6 +149,7 @@ def time_features_from_frequency_str(freq_str: str) -> list[TimeFeature]:
             MinuteOfHour,
             HourOfDay,
             DayOfYear,
+            YearOfCentury,
         ],
     }
 
@@ -159,5 +176,52 @@ def time_features_from_frequency_str(freq_str: str) -> list[TimeFeature]:
     raise RuntimeError(supported_freq_msg)
 
 
-def time_features(dates: DatetimeIndex, freq: str = "h") -> np.ndarray:  # noqa: D103
+def time_features(dates: DatetimeIndex, freq: str = "h") -> np.ndarray:
+    """
+    Transform dates into array of floats [-0.5,0.5].
+
+    :param dates: dates to transform, in pandas format.
+    :param freq: frequency string that characterize the time series.
+    """
     return np.vstack([feat(dates) for feat in time_features_from_frequency_str(freq)])
+
+
+def time_features_reverse(
+    features: torch.Tensor | np.ndarray, freq: str = "h"
+) -> DatetimeIndex:
+    """
+    Transform array of floats [-0.5, 0.5] into dates.
+
+    :param features: array of floats to transform.
+    :param freq: frequency string that characterize the time series.
+    """
+    res = [
+        feat.reverse(features[:, i])
+        for i, feat in enumerate(time_features_from_frequency_str(freq))
+    ]
+    ts_len, _ = features.shape
+    if freq == "s":
+        r = []
+        for j in range(ts_len):
+            if False:  # int(res[4][j].round()) != res[4][j] or int(res[3][j].round()) != res[3][j] or int(res[2][j].round()) != res[2][j] or int(res[1][j].round()) != res[1][j] or int(res[0][j].round()) != res[0][j]:
+                # print(int(res[4][j]),int(res[3][j]),int(res[2][j]),int(res[1][j]),int(res[0][j]))
+                # print(res[4][j],res[3][j],res[2][j],res[1][j],res[0][j])
+                print(int(res[4][j].round()), res[4][j])
+                print(int(res[3][j].round()), res[3][j])
+                print(int(res[2][j].round()), res[2][j])
+                print(int(res[1][j].round()), res[1][j])
+                print(int(res[0][j].round()), res[0][j])
+                quit()
+            r.append(
+                f"{int(res[4][j].round())}-"
+                f"{int(res[3][j].round())} "
+                f"{int(res[2][j].round())}:"
+                f"{int(res[1][j].round())}:"
+                f"{int(res[0][j].round())}"
+            )
+        # print(r)
+        return pd.to_datetime(
+            np.array(r, dtype=str).flatten(), format="%Y-%j %H:%M:%S"
+        )  # .reshape(nbatch, ts_len, -1)
+    err_msg = 'time_features_reeverse only works with freq = "s" for now.'
+    raise ValueError(err_msg)
