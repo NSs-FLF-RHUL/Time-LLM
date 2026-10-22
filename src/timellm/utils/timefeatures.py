@@ -106,7 +106,7 @@ class WeekOfYear(TimeFeature):
 
 
 class YearOfCentury(TimeFeature):
-    """Year of 1950-2050 century encoded as value between [-0.5, 0.5]."""
+    """Year of 1950-2050 century encoded as a value in the interval [-0.5, 0.5]."""
 
     def __call__(self, index: pd.DatetimeIndex) -> np.ndarray:
         """Encode year of century as floats."""
