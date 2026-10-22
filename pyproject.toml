@@ -76,6 +76,7 @@ lint.per-file-ignores = { "tests*" = [
   "ANN001", # Missing type annotation for argument
   "ANN201", # Missing return type annotation (all test_ return None anyway)
   "D100",   # Missing docstring in public module
+  "D103",   # Missing docstring in public function (test_ are hopefully clear!)
   "D401",   # 1st line should be imperative
   "INP001", # File is part of an implicit namespace package.
   "PLR0913",# Too many arguments to function.
