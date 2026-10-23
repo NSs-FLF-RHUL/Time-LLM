@@ -52,7 +52,7 @@ def data_provider(
     timeenc = 0 if args.embed != "timeF" else 1
     percent = args.percent
 
-    shuffle_flag = False if flag == "test" else True
+    shuffle_flag = flag != "test"
     drop_last = True
     batch_size = args.batch_size
     freq = args.freq
@@ -78,7 +78,7 @@ def data_provider(
             timeenc=timeenc,
             freq=freq,
             seasonal_patterns=args.seasonal_patterns,
-            **data_creation_kwargs
+            **data_creation_kwargs,
         )
 
     if seed is not None:
