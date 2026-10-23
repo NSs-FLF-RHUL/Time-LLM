@@ -37,7 +37,7 @@ def data_provider(
     Create (dataset and) dataloader.
 
     If data_set is not provided, data are read from the path indicated in args. This
-    function can be called several time with data_set = None to load data from
+    function can be called several times with data_set = None to load data from
     different files. Several datasets can then be merged and passed as argument
     to this function to create a unique dataloader for an extended dataset.
 
