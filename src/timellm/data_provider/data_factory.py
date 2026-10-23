@@ -55,13 +55,11 @@ def data_provider(
     if flag == "test":
         shuffle_flag = False
         drop_last = True
-        batch_size = args.batch_size
-        freq = args.freq
     else:
         shuffle_flag = True
         drop_last = True
-        batch_size = args.batch_size
-        freq = args.freq
+    batch_size = args.batch_size
+    freq = args.freq
 
     if data_set is None:
         if args.data == "m4":
