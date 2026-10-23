@@ -62,35 +62,28 @@ def data_provider(
     freq = args.freq
 
     if data_set is None:
+        data_creation_kwargs = {}
         if args.data == "m4":
             drop_last = False
-            data_set = data(
-                root_path=args.root_path,
-                data_path=args.data_path,
-                flag=flag,
-                size=[args.seq_len, args.label_len, args.pred_len],
-                features=args.features,
-                target=args.target,
-                timeenc=timeenc,
-                freq=freq,
-                seasonal_patterns=args.seasonal_patterns,
-            )
         else:
-            data_set = data(
-                root_path=args.root_path,
-                data_path=args.data_path,
-                flag=flag,
-                size=[args.seq_len, args.label_len, args.pred_len],
-                features=args.features,
-                target=args.target,
-                timeenc=timeenc,
-                freq=freq,
-                percent=percent,
-                seasonal_patterns=args.seasonal_patterns,
-                skiprows=args.skiprows,
-                nrows=args.nrows,
-                scale=scale,
-            )
+            data_creation_kwargs = {
+                "percent": percent,
+                "skiprows": args.skiprows,
+                "nrows": args.nrows,
+                "scale": scale,
+            }
+        data_set = data(
+            root_path=args.root_path,
+            data_path=args.data_path,
+            flag=flag,
+            size=[args.seq_len, args.label_len, args.pred_len],
+            features=args.features,
+            target=args.target,
+            timeenc=timeenc,
+            freq=freq,
+            seasonal_patterns=args.seasonal_patterns,
+            **data_creation_kwargs
+        )
 
     if seed is not None:
         g = torch.Generator()
