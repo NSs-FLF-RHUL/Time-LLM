@@ -21,6 +21,9 @@ class TimeFeature:
     def __repr__(self) -> str:  # noqa: D105
         return self.__class__.__name__ + "()"
 
+    def reverse(self, t: np.ndarray) -> np.ndarray:
+        """Decode array t back to time features."""
+
 
 class SecondOfMinute(TimeFeature):
     """Second of minute encoded as value between [-0.5, 0.5]."""
@@ -102,6 +105,18 @@ class WeekOfYear(TimeFeature):
         return (index.isocalendar().week - 1) / 52.0 - 0.5
 
 
+class YearOfCentury(TimeFeature):
+    """Year of 1950-2050 century encoded as a value in the interval [-0.5, 0.5]."""
+
+    def __call__(self, index: pd.DatetimeIndex) -> np.ndarray:
+        """Encode year of century as floats."""
+        return (index.year - 1950) / 99.0 - 0.5
+
+    def reverse(self, t: np.ndarray) -> np.ndarray:
+        """Decode floats as year."""
+        return (t + 0.5) * 99.0 + 1950
+
+
 def time_features_from_frequency_str(freq_str: str) -> list[TimeFeature]:
     """
     Return a list of appropriate time features for the given frequency string.
@@ -133,6 +148,7 @@ def time_features_from_frequency_str(freq_str: str) -> list[TimeFeature]:
             MinuteOfHour,
             HourOfDay,
             DayOfYear,
+            YearOfCentury,
         ],
     }
 
