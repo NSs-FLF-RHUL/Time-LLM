@@ -15,8 +15,6 @@ import torch
 from accelerate import Accelerator
 from tqdm import tqdm
 
-plt.switch_backend("agg")
-
 
 def adjust_learning_rate(
     accelerator: Accelerator,
