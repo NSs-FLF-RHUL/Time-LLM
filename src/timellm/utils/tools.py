@@ -9,13 +9,10 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from accelerate import Accelerator
 from tqdm import tqdm
-
-plt.switch_backend("agg")
 
 
 def adjust_learning_rate(
